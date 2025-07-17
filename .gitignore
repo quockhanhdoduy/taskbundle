@@ -1,0 +1,17 @@
+# Ignore node modules for all subprojects
+node_modules/
+
+# Build output
+build/
+dist/
+
+# Environment files
+.env
+
+# System files
+.DS_Store
+
+# Log files
+npm-debug.log
+yarn-debug.log
+yarn-error.log
