@@ -1,9 +1,9 @@
 const moment = require("moment-timezone");
 
-const  {UserModel}  = require("./users.model");
+const  {UsersModel}  = require("./users.model");
 const { UsersOTPModel } = require("./users-otp.model");
 
-class UserService {
+class UsersService {
         /**
      * create: Create new user
      * @param {*} data Object
@@ -11,7 +11,7 @@ class UserService {
      */
     async create(data) {
         try {
-            const user = await UserModel.create({...data});
+            const user = await UsersModel.create({...data});
             return user;
         } catch (error) {
             throw new Error(
@@ -48,7 +48,7 @@ class UserService {
     }
 
     try {
-        const user = await UserModel.findOne(query);
+        const user = await UsersModel.findOne(query);
         return user;
     } catch (error) {
         throw new Error(
@@ -85,7 +85,7 @@ class UserService {
     }
 
     try {
-        const users = await UserModel.find(query);
+        const users = await UsersModel.find(query);
         return users;
     } catch (error) {
         throw new Error(
@@ -122,7 +122,7 @@ class UserService {
     }
 
     try {
-        const verified = await UserModel.UpdateOne(
+        const verified = await UsersModel.updateOne(
             {email},
             {isVerified: true},
         );
@@ -154,7 +154,7 @@ class UserService {
         }
 
         try {
-            const updated = await UserModel.findByIdAndUpdate(
+            const updated = await UsersModel.findByIdAndUpdate(
                 _id,
                 { ...dataUpdate },
                 {new: true, select: "-password"});
@@ -175,7 +175,7 @@ class UserService {
 
     async changePassword(_id, newPassword) {
         try {
-            const changed = await UserModel.UpdateOne(
+            const changed = await UsersModel.updateOne(
                 {_id},
                 {password: newPassword},
             );
@@ -223,9 +223,9 @@ class UserService {
    * @returns otp
    */
 
-    async findOneUserOTP(userID) {
+    async findOneUserOTP(userID, otp) {
         try {
-            const rs = await UsersOTPModel.findOne({user: userID}, otp);
+            const rs = await UsersOTPModel.findOne({user: userID, otp});
             return rs;
         } catch (error) {
             throw new Error(
@@ -251,4 +251,4 @@ class UserService {
   }
 }
 
-module.exports = { UserService: new UserService() };
+module.exports = { UsersService: new UsersService() };

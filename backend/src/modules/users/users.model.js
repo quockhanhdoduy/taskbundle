@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const moment = require('moment-timezone');
 
-const userSchema = new mongoose.Schema({
+const usersSchema = new mongoose.Schema({
     email: {
         type: String,
         required: true,
@@ -49,6 +49,6 @@ const userSchema = new mongoose.Schema({
     timestamps: true
 });
 
-const UserModel = mongoose.model('User', userSchema);
+const UsersModel = mongoose.model('User', usersSchema);
 
-module.exports = {UserModel};
+module.exports = {UsersModel};

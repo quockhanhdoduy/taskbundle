@@ -1,9 +1,9 @@
 const moment = require('moment-timezone');
 
-const { UserService } = require('./users.service');
+const { UsersService } = require('./users.service');
 const { hashPassword, comparePassword } = require('../../utils/password.util');
 const { ResponseHandler, StatusCodes } = require('../../utils/response-handler.util');
-const { sendVerificationEmail} = require('../email/email.service');
+const { sendOTPMail} = require('../email/email.service');
 
 class UsersController {
     async viewMyProfile(req, res) {
@@ -15,7 +15,7 @@ class UsersController {
         const user = req.user;
         const data = req.body;
         try {
-            const updated = await UserService.updateOne(user._id, data);
+            const updated = await UsersService.updateOne(user._id, data);
             return ResponseHandler.success(res, StatusCodes.OK, updated);
         } catch (error) {
             return ResponseHandler.error(res, StatusCodes.INTERNAL_SERVER_ERROR, error.message);
@@ -26,17 +26,17 @@ class UsersController {
         const user = req.user;
         const data = req.body;
         try {
-            const existUser = await UserService.findOne({_id: user._id});
+            const existUser = await UsersService.findOne({_id: user._id});
             if (!existUser) {
                 return ResponseHandler.error(res, StatusCodes.NOT_FOUND, 'User not found');
             }
 
-            const isMatch = await comparePassword(data.oldPassword, existUser.password);
+            const isMatch = await comparePassword(data.password, existUser.password);
             if (!isMatch) {
                 return ResponseHandler.error(res, StatusCodes.NOT_ACCEPTABLE, 'Old password is incorrect');
             }
-            const newHashedPassword = await hashPassword(data.newPassword);
-            const changed = await UserService.changePassword(user._id, newHashedPassword);
+            const newHashedPassword = await hashPassword(data.new_password);
+            const changed = await UsersService.changePassword(user._id, newHashedPassword);
 
             return ResponseHandler.success(res, StatusCodes.OK, {success: changed});
         } catch (error) {
@@ -47,11 +47,11 @@ class UsersController {
     async forgotPassword(req, res) {
         const data = req.body;
         try {
-            const user = await UserService.findOne({email: data.email , isVerified: true});
+            const user = await UsersService.findOne({email: data.email , isVerified: true});
             if (!user) {
                 return ResponseHandler.error(res, StatusCodes.NOT_FOUND, 'User not found');
             }
-            const otp = await UserService.generateOtp(user._id);
+            const otp = await UsersService.generateOtp(user._id);
 
             console.log(`OTP: ${otp.otp}`);
             sendOTPMail(user, otp.otp);
@@ -65,11 +65,11 @@ class UsersController {
     async changePasswordWithOTP(req, res) {
         const data = req.body;
         try {
-            const user = await UserService.findOne({email: data.email, isVerified: true});
+            const user = await UsersService.findOne({email: data.email, isVerified: true});
             if (!user) {
                 return ResponseHandler.error(res, StatusCodes.NOT_FOUND, 'User not found');
             }
-            const otp = await UserService.findOneUserOTP({user: user._id, otp: data.otp});
+            const otp = await UsersService.findOneUserOTP(user._id, data.otp);
             if (!otp) {
                 return ResponseHandler.error(res, StatusCodes.NOT_FOUND, 'OTP not found');
             }
@@ -79,10 +79,10 @@ class UsersController {
                 return ResponseHandler.error(res, StatusCodes.BAD_REQUEST, 'OTP expired');
             }
 
-            const newHashedPassword = await hashPassword(data.newPassword);
-            const changed = await UserService.changePassword(user._id, newHashedPassword);
+            const newHashedPassword = await hashPassword(data.new_password);
+            const changed = await UsersService.changePassword(user._id, newHashedPassword);
 
-            await UserService.removeOTP(user._id);
+            await UsersService.removeOTP(user._id);
 
             return ResponseHandler.success(res, StatusCodes.OK, {success: changed});
         } catch (error) {
@@ -94,7 +94,7 @@ class UsersController {
     async viewUserGeneralInfo(req, res) {
         const user = req.user;
         try {
-            const userInfo = await UserService.findOne({_id: user._id});
+            const userInfo = await UsersService.findOne({_id: user._id});
             if (!userInfo) {
                 return ResponseHandler.error(res, StatusCodes.NOT_FOUND, 'User not found');
             }
@@ -108,13 +108,16 @@ class UsersController {
                 updatedAt: userInfo.updatedAt,
             }
 
-            return ResponseHandler.success(res, StatusCodes.OK, userInfo);
+            return ResponseHandler.success(res, StatusCodes.OK, result);
 
         } catch (error) {
             return ResponseHandler.error(res, StatusCodes.INTERNAL_SERVER_ERROR, error.message);
         }
     }
 }
+
+module.exports = { UsersController: new UsersController() };
+
 
 
 

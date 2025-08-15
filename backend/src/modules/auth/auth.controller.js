@@ -1,12 +1,12 @@
-const { UserService } = require("../users/users.service");
+const { UsersService } = require("../users/users.service");
 const { generateJWT, verifyRefreshJWT } = require("./auth.jwt");
 const { ResponseHandler, StatusCodes , hashPassword, comparePassword} = require("../../utils");
-const { sendVerificationEmail } = require("../../email/email.service");
+const { sendVerificationEmail } = require("../email/email.service");
 
 class AuthController {
     async register(req, res) {
         const data = req.body;
-        const existEmail = await UserService.findOne({email: data.email});
+        const existEmail = await UsersService.findOne({email: data.email});
         if (existEmail) {
             return ResponseHandler.error(res, StatusCodes.BAD_REQUEST, "Email already exists");
         }
@@ -14,9 +14,9 @@ class AuthController {
             const hashed = await hashPassword(data.password);
             data.password = hashed;
 
-            const user = await UserService.create(data);
+            const user = await UsersService.create(data);
 
-            sendVerificationEmail(user.email, user._id);
+            sendVerificationEmail(user, user.verification.code);
 
             return ResponseHandler.success(res, StatusCodes.CREATED, "User created successfully", {
                 success: true,
@@ -30,8 +30,8 @@ class AuthController {
     async verifyUser(req, res) {
         const data = req.body;
         try {
-            const user = await UserService.verifyUser(data.email, data.code);
-            return ResponseHandler.success(res, StatusCodes.OK, { success });
+            const user = await UsersService.verifyUser(data.email, data.code);
+            return ResponseHandler.success(res, StatusCodes.OK, "User verified successfully", { success: true });
         } catch (error) {
             return ResponseHandler.error(res, StatusCodes.INTERNAL_SERVER_ERROR, error.message);
         }
@@ -40,7 +40,7 @@ class AuthController {
     async login(req, res) {
         const data = req.body;
         try {
-            const user = await UserService.findOne({
+            const user = await UsersService.findOne({
                 email: data.email,
                 isVerified: true,
                 });
@@ -67,7 +67,7 @@ class AuthController {
         }
         try {
             const decode = verifyRefreshJWT(data.refreshToken);
-            const user = await UserService.findOne({
+            const user = await UsersService.findOne({
                 email: decode.email,
                 isVerified: true,
             });

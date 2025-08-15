@@ -2,7 +2,7 @@ const validator = require('validator');
 
 const { ResponseHandler, StatusCodes } = require('../../utils');
 const { verifyJWT } = require('./auth.jwt');
-const { UserService } = require('../user/user.service');
+const { UsersService } = require('../users/users.service');
 
 class AuthMiddleware {
     async verifyToken(req, res, next) {
@@ -20,7 +20,7 @@ class AuthMiddleware {
         //check token
         try {
             const userInfo = verifyJWT(tokenData[1]);
-            const user = await UserService.findOne({email: userInfo.email});
+            const user = await UsersService.findOne({email: userInfo.email});
             if (!user) {
                 return ResponseHandler.error(res, StatusCodes.NOT_FOUND, 'User not found');
             }
