@@ -1,6 +1,4 @@
-const dotenv = require('dotenv');
-
-dotenv.config();
+const { env } = require('../../utils/environment');
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 

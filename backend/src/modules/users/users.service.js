@@ -1,6 +1,6 @@
 const moment = require("moment-timezone");
 
-const { UserModel } = require("./users.model");
+const  {UserModel}  = require("./users.model");
 const { UsersOTPModel } = require("./users-otp.model");
 
 class UserService {
@@ -11,7 +11,7 @@ class UserService {
      */
     async create(data) {
         try {
-            const user = await UserModel.create(data);
+            const user = await UserModel.create({...data});
             return user;
         } catch (error) {
             throw new Error(
