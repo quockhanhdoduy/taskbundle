@@ -2,7 +2,7 @@ const { StatusCodes } = require('http-status-codes');
 
 class ResponseHandler {
     success(res,statusCode = 200, data = {}, message = 'Success') {
-        return res.status(StatusCodes).json({
+        return res.status(statusCode).json({
             status: 'success',
             code: statusCode,
             message,
@@ -11,7 +11,7 @@ class ResponseHandler {
     }
 
     error(res,statusCode = 500, message = 'Internal Server Error', error = {}) {
-        return res.status(StatusCodes).json({
+        return res.status(statusCode).json({
             status: 'error',
             code: statusCode,
             message,

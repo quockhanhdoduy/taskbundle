@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { env } = require('../utils');
 
 const  mongoDBConnect = async () => {
     try {

@@ -11,7 +11,7 @@ router.post(
 );
 
 router.put(
-    '/v1/auth/verifications',
+    '/v1/auth/verification',
     AuthMiddleware.verifyUserValidate,
     AuthController.verifyUser
 );

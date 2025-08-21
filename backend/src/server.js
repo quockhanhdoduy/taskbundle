@@ -2,15 +2,26 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
-const dotenv = require('dotenv');
+const { env } = require('./utils');
 
-dotenv.config();
+const { authRoutes } = require('./modules/auth/auth.routes');
+const { usersRoutes } = require('./modules/users/users.routes');
+const { boardsRoutes } = require('./modules/boards/boards.routes');
+const { mongoDBConnect } = require('./config/database');
+
 
 const app = express();
 
 app.use(cors());
 app.use(helmet());
 app.use(morgan('common'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Routes
+app.use(authRoutes);
+app.use(usersRoutes);
+app.use(boardsRoutes);
 
 app.get('/', (req, res) => {
     res.status(200).json({
@@ -18,9 +29,19 @@ app.get('/', (req, res) => {
     });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = env.PORT || 3000;
 
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-    console.log('http://localhost:3000');
-});
+const startServer = async () => {
+    try {
+        await mongoDBConnect();
+        app.listen(PORT, () => {
+            console.log(`Server is running on port ${PORT}`);
+            console.log('http://localhost:3000');
+        });
+    } catch (error) {
+        console.error('Failed to start server:', error.message);
+        process.exit(1);
+    }
+};
+
+startServer();

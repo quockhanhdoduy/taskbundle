@@ -194,14 +194,14 @@ class UsersService {
 
     /**
    * generateOtp: Generate otp to renew password
-   * @param {*} userID String
+   * @param {*} userId String
    * @returns otp
    */
 
-    async generateOtp(userID) {
+    async generateOtp(userId) {
         try {
             const otp = await UsersOTPModel.findOneAndUpdate(
-                {user: userID},
+                {user: userId},
                 {
                     otp: Math.floor(100000 + Math.random() * 900000),
                     ttl: moment().add(15, "minutes").unix(),
@@ -219,13 +219,13 @@ class UsersService {
 
     /**
    * findOneUserOTP: Find user otp to verify change password
-   * @param {*} userID String
+   * @param {*} userId String
    * @returns otp
    */
 
-    async findOneUserOTP(userID, otp) {
+    async findOneUserOTP(userId, otp) {
         try {
-            const rs = await UsersOTPModel.findOne({user: userID, otp});
+            const rs = await UsersOTPModel.findOne({user: userId, otp});
             return rs;
         } catch (error) {
             throw new Error(
@@ -236,12 +236,12 @@ class UsersService {
 
      /**
    * removeOTP: After change password with otp -> remove user otp
-   * @param {*} userID String
+   * @param {*} userId String
    * @returns Boolean
    */
-  async removeOTP(userID) {
+  async removeOTP(userId) {
     try {
-      const otp = await UsersOTPModel.deleteOne({ user: userID });
+      const otp = await UsersOTPModel.deleteOne({ user: userId });
       return otp;
     } catch (error) {
       throw new Error(

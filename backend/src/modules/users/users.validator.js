@@ -155,9 +155,9 @@ class UsersValidator {
       }
 
       viewUserGeneralInfo(req, res, next) {
-        const userID = req.params?.user_id;
+        const userId = req.params?.userId;
         const errors = [];
-        if (!userID || typeof userID !== 'string' || !validator.isMongoId(userID)) {
+        if (!userId || typeof userId !== 'string' || !validator.isMongoId(userId)) {
           errors.push('Missing or Invalid UserID!');
         }
         if (errors.length > 0) {

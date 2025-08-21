@@ -38,7 +38,7 @@ router.put(
 );
 
 router.get(
-    '/v1/users/:user_id',
+    '/v1/users/:userId',
     UsersValidator.viewUserGeneralInfo,
     UsersController.viewUserGeneralInfo
 );
