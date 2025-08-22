@@ -293,17 +293,6 @@ class BoardsController {
                 return ResponseHandler.error(res, StatusCodes.NOT_FOUND, 'Board not found');
             }
 
-            // check if user is admin of board
-            const userBoard = await BoardsService.findOneUsersBoards({
-                userId: user._id,
-                boardId: boardId,
-                role: BoardRoles.ADMIN
-            });
-            if (!userBoard) {
-                return ResponseHandler.error(res, StatusCodes.FORBIDDEN, 'Only admin can close board');
-            }
-
-
             const result = await BoardsService.closeBoard(boardId);
             if (!result) {
                 return ResponseHandler.error(res, StatusCodes.INTERNAL_SERVER_ERROR, 'Failed to close board');

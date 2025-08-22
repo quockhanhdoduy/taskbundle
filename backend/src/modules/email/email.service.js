@@ -13,7 +13,6 @@ const transporter = nodemailer.createTransport({
 
 /**
  * Email Service using Gmail SMTP
- * Có thể gửi email cho bất kỳ địa chỉ nào
  */
 
 const sendVerificationEmail = async (user, code) => {

@@ -35,6 +35,7 @@ class BoardsService {
             boardId: boardId,
             role,
             accepted,
+            invitedAt: new Date(),
         });
         return invited;
     } catch (error) {

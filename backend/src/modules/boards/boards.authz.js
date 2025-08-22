@@ -32,6 +32,16 @@ class BoardAuthz {
 
     req.board = existBoard;
 
+    // Check if board is closed (isDeleted = true means board is closed)
+    // Skip this check for close board endpoint
+    if (req.route && !req.route.path.includes('/close') && existBoard.isDeleted) {
+      return ResponseHandler.error(
+        res,
+        StatusCodes.FORBIDDEN,
+        'Cannot perform operations on a closed board!'
+      );
+    }
+
     if (!user) {
       return ResponseHandler.error(
         res,
@@ -82,6 +92,14 @@ class BoardAuthz {
     }
 
     req.board = existBoard;
+
+    if (existBoard.isDeleted) {
+      return ResponseHandler.error(
+        res,
+        StatusCodes.FORBIDDEN,
+        'Cannot perform operations on a closed board!'
+      );
+    }
 
     if (!user) {
       return ResponseHandler.error(

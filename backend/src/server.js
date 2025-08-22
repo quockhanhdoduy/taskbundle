@@ -7,6 +7,7 @@ const { env } = require('./utils');
 const { authRoutes } = require('./modules/auth/auth.routes');
 const { usersRoutes } = require('./modules/users/users.routes');
 const { boardsRoutes } = require('./modules/boards/boards.routes');
+const { listsRoutes } = require('./modules/lists/lists.routes');
 const { mongoDBConnect } = require('./config/database');
 
 
@@ -22,6 +23,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(authRoutes);
 app.use(usersRoutes);
 app.use(boardsRoutes);
+app.use(listsRoutes);
 
 app.get('/', (req, res) => {
     res.status(200).json({
