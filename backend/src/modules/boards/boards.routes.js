@@ -4,6 +4,7 @@ const { BoardsValidator } = require('./boards.validator');
 const { BoardsController } = require('./boards.controller');
 const { AuthMiddleware } = require('../auth/auth.middleware');
 const { BoardAuthz } = require('./boards.authz');
+const { ActivityLoggerMiddleware, ActivityTypes } = require('../activities');
 
 const router = express.Router();
 
@@ -11,6 +12,7 @@ router.post(
     '/v1/boards',
     AuthMiddleware.verifyToken,
     BoardsValidator.createBoard,
+    ActivityLoggerMiddleware.logActivity(ActivityTypes.BOARD_CREATED),
     BoardsController.createBoard
 );
 
@@ -23,7 +25,9 @@ router.get(
 router.put(
     '/v1/boards/:boardId',
     AuthMiddleware.verifyToken,
+    BoardAuthz.verifyBoardAdmin,
     BoardsValidator.updateInfo,
+    ActivityLoggerMiddleware.logActivity(ActivityTypes.BOARD_UPDATED),
     BoardsController.updateInfo
 );
 
@@ -45,6 +49,7 @@ router.put(
 router.get(
     '/v1/boards/:boardId/accept-invites/:email',
     BoardsValidator.acceptInvitation,
+    ActivityLoggerMiddleware.logActivity(ActivityTypes.BOARD_MEMBER_ADDED),
     BoardsController.acceptInvitation
 );
 
@@ -61,6 +66,7 @@ router.put(
     AuthMiddleware.verifyToken,
     BoardAuthz.verifyBoardGeneralUser,
     BoardsValidator.updateMemberRole,
+    ActivityLoggerMiddleware.logActivity(ActivityTypes.BOARD_MEMBER_ROLE_CHANGED),
     BoardsController.updateMemberRole
 );
 
@@ -69,6 +75,7 @@ router.delete(
     AuthMiddleware.verifyToken,
     BoardAuthz.verifyBoardAdmin,
     BoardsValidator.removeMember,
+    ActivityLoggerMiddleware.logActivity(ActivityTypes.BOARD_MEMBER_REMOVED),
     BoardsController.removeMember
 );
 

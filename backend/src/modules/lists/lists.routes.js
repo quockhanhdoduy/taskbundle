@@ -5,6 +5,7 @@ const { ListsController } = require('./lists.controller');
 const { ListsAuthz } = require('./lists.authz');
 const { AuthMiddleware } = require('../auth/auth.middleware');
 const { BoardAuthz } = require('../boards/boards.authz');
+const { ActivityLoggerMiddleware, ActivityTypes } = require('../activities');
 
 const router = express.Router();
 
@@ -13,6 +14,7 @@ router.post(
     AuthMiddleware.verifyToken,
     BoardAuthz.verifyBoardMember,
     ListsValidator.createList,
+    ActivityLoggerMiddleware.logActivity(ActivityTypes.LIST_CREATED),
     ListsController.createList
 );
 
@@ -29,6 +31,7 @@ router.put(
     AuthMiddleware.verifyToken,
     ListsAuthz.verifyListMemberAccess, // Check MEMBER access or higher
     ListsValidator.updateList,
+    ActivityLoggerMiddleware.logActivity(ActivityTypes.LIST_UPDATED),
     ListsController.updateList
 );
 
@@ -37,6 +40,7 @@ router.delete(
     AuthMiddleware.verifyToken,
     ListsAuthz.verifyListMemberAccess,
     ListsValidator.deleteList,
+    ActivityLoggerMiddleware.logActivity(ActivityTypes.LIST_DELETED),
     ListsController.deleteList
 );
 
@@ -45,6 +49,7 @@ router.put(
     AuthMiddleware.verifyToken,
     ListsAuthz.verifyListMemberAccess,
     ListsValidator.updateListPosition,
+    ActivityLoggerMiddleware.logActivity(ActivityTypes.LIST_MOVED),
     ListsController.updateListPosition
 );
 
