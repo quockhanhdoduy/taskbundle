@@ -29,6 +29,28 @@ class ListsController {
         }
     }
 
+    async getListById(req, res) {
+        const { listId } = req.params;
+        const user = req.user;
+
+        try {
+            const list = await ListsService.findOneList({ _id: listId });
+            if (!list) {
+                return ResponseHandler.error(
+                    res,
+                    StatusCodes.NOT_FOUND,
+                    'List not found!'
+                );
+            }
+
+            console.log(`User ${user.email} accessed list: ${list.name} in board ${list.boardId}`);
+
+            return ResponseHandler.success(res, StatusCodes.OK, list);
+        } catch (error) {
+            return ResponseHandler.error(res, StatusCodes.INTERNAL_SERVER_ERROR, error.message);
+        }
+    }
+
     async updateList(req, res) {
         const { listId } = req.params;
         const data = req.body;

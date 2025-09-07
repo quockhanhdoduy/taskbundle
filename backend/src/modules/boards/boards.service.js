@@ -177,9 +177,6 @@ class BoardsService {
     if (data.name) {
         dataUpdate.name = data.name;
     }
-    if (data.description) {
-        dataUpdate.description = data.description;
-    }
     try {
         const updated = await BoardsModel.findByIdAndUpdate(_id, dataUpdate, {new: true});
         return updated;

@@ -1,0 +1,127 @@
+import 'package:get/get.dart';
+import '../services/api_service.dart';
+import '../config/api_endpoints.dart';
+
+class CommentController extends GetxController {
+  var isLoading = false.obs;
+  var comments = <Map<String, dynamic>>[].obs;
+  var errorMessage = ''.obs;
+
+  // Lấy comments của card
+  Future<void> getCardComments(String cardId) async {
+    try {
+      isLoading.value = true;
+      errorMessage.value = '';
+
+      final result = await ApiService.get(ApiEndpoints.cardComments(cardId));
+
+      if (result['status'] == 'success' || result['success'] == true) {
+        comments.value = List<Map<String, dynamic>>.from(result['data'] ?? []);
+      } else {
+        errorMessage.value = result['message'] ?? 'Lỗi khi tải comments';
+        Get.snackbar('Lỗi', errorMessage.value);
+      }
+    } catch (e) {
+      errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
+      Get.snackbar('Lỗi', errorMessage.value);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // Tạo comment mới
+  Future<bool> createComment(String cardId, String content) async {
+    try {
+      isLoading.value = true;
+      errorMessage.value = '';
+
+      final result = await ApiService.post(ApiEndpoints.cardComments(cardId), {
+        'content': content,
+      });
+
+      if (result['status'] == 'success' || result['success'] == true) {
+        Get.snackbar('Thành công', 'Tạo comment thành công');
+        await getCardComments(cardId); // Refresh danh sách
+        return true;
+      } else {
+        errorMessage.value = result['message'] ?? 'Tạo comment thất bại';
+        Get.snackbar('Lỗi', errorMessage.value);
+        return false;
+      }
+    } catch (e) {
+      errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
+      Get.snackbar('Lỗi', errorMessage.value);
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // Lấy chi tiết comment
+  Future<Map<String, dynamic>> getCommentDetail(String commentId) async {
+    try {
+      isLoading.value = true;
+      errorMessage.value = '';
+
+      return await ApiService.get(ApiEndpoints.commentDetail(commentId));
+    } catch (e) {
+      errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
+      Get.snackbar('Lỗi', errorMessage.value);
+      return {'success': false, 'message': errorMessage.value};
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // Cập nhật comment
+  Future<bool> updateComment(String commentId, String content, String cardId) async {
+    try {
+      isLoading.value = true;
+
+      final result = await ApiService.put(ApiEndpoints.commentUpdate(commentId), {
+        'content': content,
+      });
+
+      if (result['status'] == 'success' || result['success'] == true) {
+        Get.snackbar('Thành công', 'Cập nhật comment thành công');
+        await getCardComments(cardId); // Refresh danh sách
+        return true;
+      } else {
+        errorMessage.value = result['message'] ?? 'Cập nhật comment thất bại';
+        Get.snackbar('Lỗi', errorMessage.value);
+        return false;
+      }
+    } catch (e) {
+      errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
+      Get.snackbar('Lỗi', errorMessage.value);
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // Xóa comment
+  Future<bool> deleteComment(String commentId, String cardId) async {
+    try {
+      isLoading.value = true;
+
+      final result = await ApiService.delete(ApiEndpoints.commentDelete(commentId));
+
+      if (result['status'] == 'success' || result['success'] == true) {
+        Get.snackbar('Thành công', 'Xóa comment thành công');
+        await getCardComments(cardId); // Refresh danh sách
+        return true;
+      } else {
+        errorMessage.value = result['message'] ?? 'Xóa comment thất bại';
+        Get.snackbar('Lỗi', errorMessage.value);
+        return false;
+      }
+    } catch (e) {
+      errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
+      Get.snackbar('Lỗi', errorMessage.value);
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+}

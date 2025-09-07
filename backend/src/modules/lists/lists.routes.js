@@ -26,6 +26,14 @@ router.get(
     ListsController.getListsByBoard
 );
 
+router.get(
+    '/v1/lists/:listId',
+    AuthMiddleware.verifyToken,
+    ListsAuthz.verifyListAccess,
+    ListsValidator.getListById,
+    ListsController.getListById
+);
+
 router.put(
     '/v1/lists/:listId',
     AuthMiddleware.verifyToken,

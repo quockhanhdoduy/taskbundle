@@ -5,10 +5,6 @@ const BoardsSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    description: {
-        type: String,
-        required: true,
-    },
     deletedAt: {
         type: Date,
         default: null,

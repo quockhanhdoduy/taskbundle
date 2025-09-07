@@ -25,16 +25,19 @@ router.put(
     UsersController.changePassword
 );
 
-router.put(
+router.post(
     '/v1/users/forgot-password',
-    UsersValidator.forgotPassword,
     UsersController.forgotPassword
 );
 
 router.put(
-    '/v1/users/change-password-with-otp',
-    UsersValidator.changePasswordWithOTP,
-    UsersController.changePasswordWithOTP
+    '/v1/users/verify-forgot-password',
+    UsersController.verifyForgotPassword
+);
+
+router.post(
+    '/v1/users/reset-password',
+    UsersController.resetPassword
 );
 
 router.get(

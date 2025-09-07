@@ -23,10 +23,6 @@ class BoardsValidator {
       errors.push('Name invalid type STRING, or over length 150 chars!');
     }
 
-    if (data.description && typeof data.description !== 'string') {
-      errors.push('Description must be string!');
-    }
-
     if (
       data.background &&
       (typeof data.background !== 'string' || !validator.isURL(data.background))
@@ -63,10 +59,6 @@ class BoardsValidator {
         !validator.isLength(data.name, { min: 1, max: 150 }))
     ) {
       errors.push('Name invalid type STRING, or over length 150 chars!');
-    }
-
-    if (data.description && typeof data.description !== 'string') {
-      errors.push('Description must be string!');
     }
 
     if (

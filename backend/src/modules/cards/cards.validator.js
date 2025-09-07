@@ -36,12 +36,10 @@ class CardsValidator {
             errors.push('Card title must be a string and not exceed 200 characters!');
         }
 
-        if (data.description && typeof data.description !== 'string') {
-            errors.push('Card description must be a string!');
-        }
-
-        if (data.description && !validator.isLength(data.description, { max: 2000 })) {
-            errors.push('Card description must not exceed 2000 characters!');
+        if (data.description !== undefined) {
+            if (typeof data.description !== 'string' || !validator.isLength(data.description, { min: 0, max: 1000 })) {
+                errors.push('Card description must be a string and not exceed 1000 characters!');
+            }
         }
 
         if (data.dueDate && !validator.isISO8601(data.dueDate)) {
@@ -184,12 +182,10 @@ class CardsValidator {
             }
         }
 
-        if (data.description !== undefined && typeof data.description !== 'string') {
-            errors.push('Card description must be a string!');
-        }
-
-        if (data.description && !validator.isLength(data.description, { max: 2000 })) {
-            errors.push('Card description must not exceed 2000 characters!');
+        if (data.description !== undefined) {
+            if (typeof data.description !== 'string' || !validator.isLength(data.description, { min: 0, max: 1000 })) {
+                errors.push('Card description must be a string and not exceed 1000 characters!');
+            }
         }
 
         if (data.dueDate !== undefined && data.dueDate !== null && !validator.isISO8601(data.dueDate)) {
@@ -530,3 +526,5 @@ class CardsValidator {
 }
 
 module.exports = { CardsValidator: new CardsValidator() };
+
+

@@ -56,7 +56,7 @@ class ListsValidator {
                 );
             }
 
-            // Check if board is closed 
+            // Check if board is closed
             if (board.isDeleted) {
                 return ResponseHandler.error(
                     res,
@@ -170,6 +170,20 @@ class ListsValidator {
                 res,
                 StatusCodes.BAD_REQUEST,
                 'Board ID không hợp lệ!!!'
+            );
+        }
+
+        return next();
+    }
+
+    getListById(req, res, next) {
+        const { listId } = req.params;
+
+        if (!listId || !validator.isMongoId(listId)) {
+            return ResponseHandler.error(
+                res,
+                StatusCodes.BAD_REQUEST,
+                'Invalid List ID!!!'
             );
         }
 

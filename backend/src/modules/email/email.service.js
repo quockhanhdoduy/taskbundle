@@ -31,7 +31,7 @@ const sendVerificationEmail = async (user, code) => {
         return result;
     } catch (error) {
         console.error('Send verification email failed:', error);
-        throw new Error('Send verification email failed');
+        return null; // do not throw to avoid crashing auth flow
     }
 }
 
@@ -51,7 +51,7 @@ const sendOTPMail = async (user, otp) => {
         return result;
     } catch (error) {
         console.error('Send OTP email failed:', error);
-        throw new Error('Send OTP email failed');
+        return null; // non-fatal
     }
 }
 

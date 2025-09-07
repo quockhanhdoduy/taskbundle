@@ -11,6 +11,11 @@ class CardsAuthz {
         try {
             const { cardId } = req.params;
 
+            // Debug logging
+            console.log('DEBUG - verifyCardAccess - cardId:', cardId);
+            console.log('DEBUG - verifyCardAccess - req.params:', req.params);
+            console.log('DEBUG - verifyCardAccess - req.url:', req.url);
+
             // Get card information with list details
             const card = await CardsService.findOneCard({ _id: cardId });
             if (!card) {

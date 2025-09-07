@@ -1,7 +1,6 @@
 const moment = require("moment-timezone");
 
 const  {UsersModel}  = require("./users.model");
-const { UsersOTPModel } = require("./users-otp.model");
 
 class UsersService {
         /**
@@ -139,6 +138,36 @@ class UsersService {
     }
   }
 
+  /**
+   * verifyForgotPassword: Verify OTP for forgot password (user already verified)
+   * @param {*} email String
+   * @param {*} code Number
+   * @returns Boolean
+   */
+  async verifyForgotPassword(email, code) {
+    const user = await this.findOne({
+        email,
+        isVerified: true, // User đã verified rồi
+        isDeleted: false,
+    });
+
+    if (!user) {
+        throw new Error("User not found");
+    }
+
+    if (user.verification.code !== code) {
+        throw new Error("Invalid verification code");
+    }
+
+    const current = moment().unix();
+
+    if (user.verification.ttl < current) {
+        throw new Error("Verification code expired");
+    }
+
+    return true; // Chỉ verify OTP, không cần update isVerified
+  }
+
     /**
    * updateOne: Update user general info
    * @param {*} _id String
@@ -151,6 +180,16 @@ class UsersService {
 
         if (data.name) {
             dataUpdate.name = data.name;
+        }
+
+        if (data['verification.code']) {
+            dataUpdate['verification.code'] = data['verification.code'];
+        }
+        if (data['verification.ttl']) {
+            dataUpdate['verification.ttl'] = data['verification.ttl'];
+        }
+        if (data.password) {
+            dataUpdate.password = data.password;
         }
 
         try {
@@ -192,63 +231,8 @@ class UsersService {
         }
     }
 
-    /**
-   * generateOtp: Generate otp to renew password
-   * @param {*} userId String
-   * @returns otp
-   */
 
-    async generateOtp(userId) {
-        try {
-            const otp = await UsersOTPModel.findOneAndUpdate(
-                {user: userId},
-                {
-                    otp: Math.floor(100000 + Math.random() * 900000),
-                    ttl: moment().add(15, "minutes").unix(),
-                },
-                {new: true, upsert: true},
-            );
 
-            return otp;
-        } catch (error) {
-            throw new Error(
-                error.message || "Error generating otp"
-            );
-        }
-    }
-
-    /**
-   * findOneUserOTP: Find user otp to verify change password
-   * @param {*} userId String
-   * @returns otp
-   */
-
-    async findOneUserOTP(userId, otp) {
-        try {
-            const rs = await UsersOTPModel.findOne({user: userId, otp});
-            return rs;
-        } catch (error) {
-            throw new Error(
-                error.message || "Error finding user otp"
-            );
-        }
-    }
-
-     /**
-   * removeOTP: After change password with otp -> remove user otp
-   * @param {*} userId String
-   * @returns Boolean
-   */
-  async removeOTP(userId) {
-    try {
-      const otp = await UsersOTPModel.deleteOne({ user: userId });
-      return otp;
-    } catch (error) {
-      throw new Error(
-        error.message || 'removeOTP met: Internal Server Error!!!'
-      );
-    }
-  }
 }
 
 module.exports = { UsersService: new UsersService() };

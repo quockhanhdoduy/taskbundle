@@ -2,21 +2,55 @@ const { UsersService } = require("../users/users.service");
 const { generateJWT, verifyRefreshJWT } = require("./auth.jwt");
 const { ResponseHandler, StatusCodes , hashPassword, comparePassword} = require("../../utils");
 const { sendVerificationEmail } = require("../email/email.service");
+const moment = require('moment');
 
 class AuthController {
     async register(req, res) {
         const data = req.body;
         const existEmail = await UsersService.findOne({email: data.email});
+
         if (existEmail) {
-            return ResponseHandler.error(res, StatusCodes.BAD_REQUEST, "Email already exists");
+            // Nếu email đã tồn tại, tạo mã mới và gửi lại verification code
+            try {
+                // Tạo mã mới và cập nhật TTL
+                const newCode = Math.floor(100000 + Math.random() * 900000);
+                const newTtl = moment().add(15, 'minute').unix();
+
+                // Cập nhật mã mới vào database
+                await UsersService.updateOne(
+                    existEmail._id,
+                    {
+                        'verification.code': newCode,
+                        'verification.ttl': newTtl
+                    }
+                );
+
+                // Gửi email với mã mới
+                await sendVerificationEmail(existEmail, newCode);
+                return ResponseHandler.success(res, StatusCodes.OK, "Verification code sent successfully", {
+                    success: true,
+                    email: existEmail.email
+                });
+            } catch (e) {
+                console.log('Skip email error in resend:', e?.message || e);
+                return ResponseHandler.success(res, StatusCodes.OK, "Verification code sent successfully", {
+                    success: true,
+                    email: existEmail.email
+                });
+            }
         }
+
         try {
             const hashed = await hashPassword(data.password);
             data.password = hashed;
 
             const user = await UsersService.create(data);
-
-            sendVerificationEmail(user, user.verification.code);
+            // Try to send verification email but do not block registration
+            try {
+                await sendVerificationEmail(user, user.verification.code);
+            } catch (e) {
+                console.log('Skip email error in register:', e?.message || e);
+            }
 
             return ResponseHandler.success(res, StatusCodes.CREATED, "User created successfully", {
                 success: true,
@@ -81,6 +115,7 @@ class AuthController {
             return ResponseHandler.error(res, StatusCodes.INTERNAL_SERVER_ERROR, error.message || 'Refresh token is invalid');
         }
     }
+
 }
 
 module.exports = { AuthController: new AuthController() };

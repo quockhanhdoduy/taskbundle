@@ -31,6 +31,11 @@ class CardsController {
     async getCard(req, res) {
         const { cardId } = req.params;
 
+        // Debug logging
+        console.log('DEBUG - getCard - cardId:', cardId);
+        console.log('DEBUG - getCard - req.params:', req.params);
+        console.log('DEBUG - getCard - req.url:', req.url);
+
         try {
             const card = await CardsService.findOneCard({ _id: cardId });
             if (!card) {

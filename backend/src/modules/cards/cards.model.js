@@ -8,8 +8,9 @@ const CardsSchema = new mongoose.Schema({
     },
     description: {
         type: String,
-        default: '',
         trim: true,
+        default: '',
+        maxlength: 1000,
     },
     listId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -71,7 +72,7 @@ const CardsSchema = new mongoose.Schema({
 });
 
 
-const MAX_CARDS_PER_LIST = 50;
+const MAX_CARDS_PER_LIST = 20;
 const MAX_ATTACHMENTS_PER_CARD = 20;
 
 const CardsModel = mongoose.model('cards', CardsSchema);
