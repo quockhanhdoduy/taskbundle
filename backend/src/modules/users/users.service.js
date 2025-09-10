@@ -147,7 +147,7 @@ class UsersService {
   async verifyForgotPassword(email, code) {
     const user = await this.findOne({
         email,
-        isVerified: true, // User đã verified rồi
+        isVerified: true,
         isDeleted: false,
     });
 
@@ -165,7 +165,7 @@ class UsersService {
         throw new Error("Verification code expired");
     }
 
-    return true; // Chỉ verify OTP, không cần update isVerified
+    return true;
   }
 
     /**

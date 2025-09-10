@@ -19,12 +19,12 @@ class CardController extends GetxController {
       if (result['status'] == 'success' || result['success'] == true) {
         cards.value = List<Map<String, dynamic>>.from(result['data'] ?? []);
       } else {
-        errorMessage.value = result['message'] ?? 'Lỗi khi tải cards';
-        Get.snackbar('Lỗi', errorMessage.value);
+        errorMessage.value = result['message'] ?? 'Error loading cards';
+        Get.snackbar('Error', errorMessage.value);
       }
     } catch (e) {
-      errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
-      Get.snackbar('Lỗi', errorMessage.value);
+      errorMessage.value = 'Connection error: ${e.toString()}';
+      Get.snackbar('Error', errorMessage.value);
     } finally {
       isLoading.value = false;
     }
@@ -52,13 +52,13 @@ class CardController extends GetxController {
         await getCardsByList(listId); // Refresh danh sách
         return true;
       } else {
-        errorMessage.value = result['message'] ?? 'Tạo card thất bại';
-        Get.snackbar('Lỗi', errorMessage.value);
+        errorMessage.value = result['message'] ?? 'Create card failed';
+        Get.snackbar('Error', errorMessage.value);
         return false;
       }
     } catch (e) {
-      errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
-      Get.snackbar('Lỗi', errorMessage.value);
+      errorMessage.value = 'Connection error: ${e.toString()}';
+      Get.snackbar('Error', errorMessage.value);
       return false;
     } finally {
       isLoading.value = false;
@@ -84,11 +84,11 @@ class CardController extends GetxController {
         // Don't show snackbar here, let the UI handle it
         return true;
       } else {
-        errorMessage.value = result['message'] ?? 'Cập nhật card thất bại';
+        errorMessage.value = result['message'] ?? 'Update card failed';
         return false;
       }
     } catch (e) {
-      errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
+      errorMessage.value = 'Connection error: ${e.toString()}';
       return false;
     } finally {
       isLoading.value = false;
@@ -103,16 +103,16 @@ class CardController extends GetxController {
       final result = await ApiService.delete(ApiEndpoints.cardDelete(cardId));
 
       if (result['status'] == 'success' || result['success'] == true) {
-        Get.snackbar('Thành công', 'Xóa card thành công');
+        Get.snackbar('Success', 'Delete card successfully');
         return true;
       } else {
-        errorMessage.value = result['message'] ?? 'Xóa card thất bại';
-        Get.snackbar('Lỗi', errorMessage.value);
+        errorMessage.value = result['message'] ?? 'Delete card failed';
+        Get.snackbar('Error', errorMessage.value);
         return false;
       }
     } catch (e) {
-      errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
-      Get.snackbar('Lỗi', errorMessage.value);
+      errorMessage.value = 'Connection error: ${e.toString()}';
+      Get.snackbar('Error', errorMessage.value);
       return false;
     } finally {
       isLoading.value = false;
@@ -127,16 +127,16 @@ class CardController extends GetxController {
       final result = await ApiService.uploadFile(ApiEndpoints.cardAttachments(cardId), filePath, null);
 
       if (result['status'] == 'success' || result['success'] == true) {
-        Get.snackbar('Thành công', 'Upload file thành công');
+        Get.snackbar('Success', 'Upload file successfully');
         return true;
       } else {
-        errorMessage.value = result['message'] ?? 'Upload file thất bại';
-        Get.snackbar('Lỗi', errorMessage.value);
+        errorMessage.value = result['message'] ?? 'Upload file failed';
+        Get.snackbar('Error', errorMessage.value);
         return false;
       }
     } catch (e) {
-      errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
-      Get.snackbar('Lỗi', errorMessage.value);
+      errorMessage.value = 'Connection error: ${e.toString()}';
+      Get.snackbar('Error', errorMessage.value);
       return false;
     } finally {
       isLoading.value = false;
@@ -153,8 +153,8 @@ class CardController extends GetxController {
 
       return await ApiService.get(endpoint);
     } catch (e) {
-      errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
-      Get.snackbar('Lỗi', errorMessage.value);
+      errorMessage.value = 'Connection error: ${e.toString()}';
+      Get.snackbar('Error', errorMessage.value);
       return {'success': false, 'message': errorMessage.value};
     } finally {
       isLoading.value = false;
@@ -171,16 +171,16 @@ class CardController extends GetxController {
       });
 
       if (result['status'] == 'success' || result['success'] == true) {
-        Get.snackbar('Thành công', 'Di chuyển card thành công');
+        Get.snackbar('Success', 'Move card successfully');
         return true;
       } else {
-        errorMessage.value = result['message'] ?? 'Di chuyển card thất bại';
-        Get.snackbar('Lỗi', errorMessage.value);
+        errorMessage.value = result['message'] ?? 'Move card failed';
+        Get.snackbar('Error', errorMessage.value);
         return false;
       }
     } catch (e) {
-      errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
-      Get.snackbar('Lỗi', errorMessage.value);
+      errorMessage.value = 'Connection error: ${e.toString()}';
+      Get.snackbar('Error', errorMessage.value);
       return false;
     } finally {
       isLoading.value = false;
@@ -198,16 +198,16 @@ class CardController extends GetxController {
       });
 
       if (result['status'] == 'success' || result['success'] == true) {
-        Get.snackbar('Thành công', 'Chuyển card thành công');
+        Get.snackbar('Success', 'Move card successfully');
         return true;
       } else {
-        errorMessage.value = result['message'] ?? 'Chuyển card thất bại';
-        Get.snackbar('Lỗi', errorMessage.value);
+        errorMessage.value = result['message'] ?? 'Move card failed';
+        Get.snackbar('Error', errorMessage.value);
         return false;
       }
     } catch (e) {
-      errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
-      Get.snackbar('Lỗi', errorMessage.value);
+      errorMessage.value = 'Connection error: ${e.toString()}';
+      Get.snackbar('Error', errorMessage.value);
       return false;
     } finally {
       isLoading.value = false;
@@ -224,16 +224,16 @@ class CardController extends GetxController {
       });
 
       if (result['status'] == 'success' || result['success'] == true) {
-        Get.snackbar('Thành công', 'Assign user thành công');
+        Get.snackbar('Success', 'Assign user successfully');
         return true;
       } else {
-        errorMessage.value = result['message'] ?? 'Assign user thất bại';
-        Get.snackbar('Lỗi', errorMessage.value);
+        errorMessage.value = result['message'] ?? 'Assign user failed';
+        Get.snackbar('Error', errorMessage.value);
         return false;
       }
     } catch (e) {
-      errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
-      Get.snackbar('Lỗi', errorMessage.value);
+      errorMessage.value = 'Connection error: ${e.toString()}';
+      Get.snackbar('Error', errorMessage.value);
       return false;
     } finally {
       isLoading.value = false;
@@ -245,19 +245,21 @@ class CardController extends GetxController {
     try {
       isLoading.value = true;
 
-      final result = await ApiService.delete(ApiEndpoints.cardUnassign(cardId));
+      final result = await ApiService.deleteWithBody(ApiEndpoints.cardUnassign(cardId), {
+        'userId': userId,
+      });
 
       if (result['status'] == 'success' || result['success'] == true) {
-        Get.snackbar('Thành công', 'Unassign user thành công');
+        Get.snackbar('Success', 'Unassign user successfully');
         return true;
       } else {
-        errorMessage.value = result['message'] ?? 'Unassign user thất bại';
-        Get.snackbar('Lỗi', errorMessage.value);
+        errorMessage.value = result['message'] ?? 'Unassign user failed';
+        Get.snackbar('Error', errorMessage.value);
         return false;
       }
     } catch (e) {
-      errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
-      Get.snackbar('Lỗi', errorMessage.value);
+      errorMessage.value = 'Connection error: ${e.toString()}';
+      Get.snackbar('Error', errorMessage.value);
       return false;
     } finally {
       isLoading.value = false;
@@ -272,8 +274,8 @@ class CardController extends GetxController {
 
       return await ApiService.get(ApiEndpoints.cardMembers(cardId));
     } catch (e) {
-      errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
-      Get.snackbar('Lỗi', errorMessage.value);
+      errorMessage.value = 'Connection error: ${e.toString()}';
+      Get.snackbar('Error', errorMessage.value);
       return {'success': false, 'message': errorMessage.value};
     } finally {
       isLoading.value = false;
@@ -290,16 +292,16 @@ class CardController extends GetxController {
       });
 
       if (result['status'] == 'success' || result['success'] == true) {
-        Get.snackbar('Thành công', 'Assign users thành công');
+        Get.snackbar('Success', 'Assign users successfully');
         return true;
       } else {
-        errorMessage.value = result['message'] ?? 'Assign users thất bại';
-        Get.snackbar('Lỗi', errorMessage.value);
+        errorMessage.value = result['message'] ?? 'Assign users failed';
+        Get.snackbar('Error', errorMessage.value);
         return false;
       }
     } catch (e) {
-      errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
-      Get.snackbar('Lỗi', errorMessage.value);
+      errorMessage.value = 'Connection error: ${e.toString()}';
+      Get.snackbar('Error', errorMessage.value);
       return false;
     } finally {
       isLoading.value = false;
@@ -319,12 +321,12 @@ class CardController extends GetxController {
         // Don't show snackbar here, let the UI handle it
         return true;
       } else {
-        errorMessage.value = result['message'] ?? 'Cập nhật due date thất bại';
+        errorMessage.value = result['message'] ?? 'Update due date failed';
         return false;
       }
     } catch (e) {
-      errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
-      Get.snackbar('Lỗi', errorMessage.value);
+      errorMessage.value = 'Connection error: ${e.toString()}';
+      Get.snackbar('Error', errorMessage.value);
       return false;
     } finally {
       isLoading.value = false;
@@ -350,12 +352,12 @@ class CardController extends GetxController {
         return true;
       } else {
         // Toggle completion failed
-        errorMessage.value = result['message'] ?? 'Cập nhật trạng thái thất bại';
+        errorMessage.value = result['message'] ?? 'Update status failed';
         return false;
       }
     } catch (e) {
       // Toggle completion error
-      errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
+      errorMessage.value = 'Connection error: ${e.toString()}';
       return false;
     } finally {
       isLoading.value = false;
@@ -370,8 +372,8 @@ class CardController extends GetxController {
 
       return await ApiService.get(ApiEndpoints.cardAttachments(cardId));
     } catch (e) {
-      errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
-      Get.snackbar('Lỗi', errorMessage.value);
+      errorMessage.value = 'Connection error: ${e.toString()}';
+      Get.snackbar('Error', errorMessage.value);
       return {'success': false, 'message': errorMessage.value};
     } finally {
       isLoading.value = false;
@@ -386,16 +388,16 @@ class CardController extends GetxController {
       final result = await ApiService.delete(ApiEndpoints.cardRemoveAttachment(cardId, attachmentId));
 
       if (result['status'] == 'success' || result['success'] == true) {
-        Get.snackbar('Thành công', 'Xóa attachment thành công');
+        Get.snackbar('Success', 'Remove attachment successfully');
         return true;
       } else {
-        errorMessage.value = result['message'] ?? 'Xóa attachment thất bại';
-        Get.snackbar('Lỗi', errorMessage.value);
+        errorMessage.value = result['message'] ?? 'Remove attachment failed';
+        Get.snackbar('Error', errorMessage.value);
         return false;
       }
     } catch (e) {
-      errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
-      Get.snackbar('Lỗi', errorMessage.value);
+      errorMessage.value = 'Connection error: ${e.toString()}';
+      Get.snackbar('Error', errorMessage.value);
       return false;
     } finally {
       isLoading.value = false;
@@ -410,8 +412,101 @@ class CardController extends GetxController {
 
       return await ApiService.get(ApiEndpoints.listDetail(listId));
     } catch (e) {
-      errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
+      errorMessage.value = 'Connection error: ${e.toString()}';
       return {'success': false, 'message': errorMessage.value};
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // Comment methods
+  Future<Map<String, dynamic>> getCardComments(String cardId) async {
+    try {
+      isLoading.value = true;
+      errorMessage.value = '';
+
+      return await ApiService.get(ApiEndpoints.cardComments(cardId));
+    } catch (e) {
+      errorMessage.value = 'Connection error: ${e.toString()}';
+      return {'success': false, 'message': errorMessage.value};
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<bool> createComment(String cardId, String content) async {
+    try {
+      isLoading.value = true;
+      print('CardController: Creating comment for card $cardId with content: $content');
+
+      final result = await ApiService.post(ApiEndpoints.cardComments(cardId), {
+        'content': content,
+        'cardId': cardId,
+      });
+
+      print('CardController: API response: $result');
+
+      if (result['status'] == 'success' || result['success'] == true) {
+        Get.snackbar('Success', 'Comment added successfully');
+        return true;
+      } else {
+        errorMessage.value = result['message'] ?? 'Failed to add comment';
+        Get.snackbar('Error', errorMessage.value);
+        return false;
+      }
+    } catch (e) {
+      print('CardController: Error creating comment: $e');
+      errorMessage.value = 'Connection error: ${e.toString()}';
+      Get.snackbar('Error', errorMessage.value);
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<bool> updateComment(String commentId, String content) async {
+    try {
+      isLoading.value = true;
+
+      final result = await ApiService.put(ApiEndpoints.commentUpdate(commentId), {
+        'content': content,
+      });
+
+      if (result['status'] == 'success' || result['success'] == true) {
+        Get.snackbar('Success', 'Comment updated successfully');
+        return true;
+      } else {
+        errorMessage.value = result['message'] ?? 'Failed to update comment';
+        Get.snackbar('Error', errorMessage.value);
+        return false;
+      }
+    } catch (e) {
+      errorMessage.value = 'Connection error: ${e.toString()}';
+      Get.snackbar('Error', errorMessage.value);
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<bool> deleteComment(String commentId) async {
+    try {
+      isLoading.value = true;
+
+      final result = await ApiService.delete(ApiEndpoints.commentDelete(commentId));
+
+      if (result['status'] == 'success' || result['success'] == true) {
+        Get.snackbar('Success', 'Comment deleted successfully');
+        return true;
+      } else {
+        errorMessage.value = result['message'] ?? 'Failed to delete comment';
+        Get.snackbar('Error', errorMessage.value);
+        return false;
+      }
+    } catch (e) {
+      errorMessage.value = 'Connection error: ${e.toString()}';
+      Get.snackbar('Error', errorMessage.value);
+      return false;
     } finally {
       isLoading.value = false;
     }

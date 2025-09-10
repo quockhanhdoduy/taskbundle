@@ -1,10 +1,15 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../models/card.dart';
+import '../../../controllers/card_controller.dart';
 
 class CardAttachmentsWidget extends StatefulWidget {
   final TaskCard card;
-  final Function(String, String) onAddAttachment; // filename, url
+  final Function(String, String) onAddAttachment; // filename, url (callback giữ cho backwards)
 
   const CardAttachmentsWidget({
     super.key,
@@ -17,28 +22,37 @@ class CardAttachmentsWidget extends StatefulWidget {
 }
 
 class _CardAttachmentsWidgetState extends State<CardAttachmentsWidget> {
-  // Mock attachments for demonstration
-  final List<Map<String, dynamic>> _mockAttachments = [
-    {
-      'id': '1',
-      'filename': 'project_spec.pdf',
-      'url': 'https://example.com/files/project_spec.pdf',
-      'uploadedBy': 'John Doe',
-      'uploadedAt': DateTime.now().subtract(const Duration(days: 2)),
-      'size': '2.3 MB',
-    },
-    {
-      'id': '2',
-      'filename': 'mockup_design.png',
-      'url': 'https://example.com/files/mockup_design.png',
-      'uploadedBy': 'Jane Smith',
-      'uploadedAt': DateTime.now().subtract(const Duration(hours: 5)),
-      'size': '1.8 MB',
-    },
-  ];
+  late final CardController _cardController;
+  List<Map<String, dynamic>> _attachments = [];
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _cardController = Get.find<CardController>(tag: 'card_detail_${widget.card.id}');
+    _loadAttachments();
+  }
+
+  Future<void> _loadAttachments() async {
+    setState(() => _loading = true);
+    try {
+      final result = await _cardController.getCardAttachments(widget.card.id);
+      if ((result['success'] == true || result['status'] == 'success') && result['data'] != null) {
+        final List<dynamic> data = result['data'];
+        setState(() {
+          _attachments = data.map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e)).toList();
+        });
+      } else {
+        setState(() => _attachments = []);
+      }
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final count = _attachments.length;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -49,7 +63,6 @@ class _CardAttachmentsWidgetState extends State<CardAttachmentsWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Row(
             children: [
               const Text(
@@ -60,12 +73,12 @@ class _CardAttachmentsWidgetState extends State<CardAttachmentsWidget> {
                 ),
               ),
               const Spacer(),
+              if (_loading)
+                const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+              else
               Text(
-                '${_mockAttachments.length} file${_mockAttachments.length != 1 ? 's' : ''}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
+                  '$count file${count != 1 ? 's' : ''}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
             ],
           ),
@@ -81,7 +94,7 @@ class _CardAttachmentsWidgetState extends State<CardAttachmentsWidget> {
               border: Border.all(color: Colors.grey[200]!, style: BorderStyle.solid),
             ),
             child: InkWell(
-              onTap: _showAddAttachmentDialog,
+              onTap: _pickAndUploadFile,
               borderRadius: BorderRadius.circular(8),
               child: Container(
                 padding: const EdgeInsets.all(16),
@@ -105,8 +118,7 @@ class _CardAttachmentsWidgetState extends State<CardAttachmentsWidget> {
 
           const SizedBox(height: 16),
 
-          // Attachments list
-          if (_mockAttachments.isEmpty)
+          if (_attachments.isEmpty)
             Container(
               padding: const EdgeInsets.all(16),
               child: Row(
@@ -125,7 +137,7 @@ class _CardAttachmentsWidgetState extends State<CardAttachmentsWidget> {
             )
           else
             Column(
-              children: _mockAttachments.map((attachment) => _buildAttachmentItem(attachment)).toList(),
+              children: _attachments.map((attachment) => _buildAttachmentItem(attachment)).toList(),
             ),
         ],
       ),
@@ -133,11 +145,13 @@ class _CardAttachmentsWidgetState extends State<CardAttachmentsWidget> {
   }
 
   Widget _buildAttachmentItem(Map<String, dynamic> attachment) {
-    final filename = attachment['filename'];
-    final url = attachment['url'];
-    final size = attachment['size'];
-    final uploadedBy = attachment['uploadedBy'];
-    final uploadedAt = attachment['uploadedAt'] as DateTime;
+    final filename = attachment['fileName'] ?? attachment['filename'] ?? 'Attachment';
+    final url = attachment['url'] ?? '';
+    final uploadedBy = (attachment['uploadedBy']?['name']) ?? attachment['uploadedBy'] ?? '';
+    final uploadedAtStr = attachment['uploadedAt'] ?? attachment['createdAt'];
+    DateTime? uploadedAt;
+    try { uploadedAt = uploadedAtStr != null ? DateTime.parse(uploadedAtStr) : null; } catch (_) {}
+    final size = attachment['size'] ?? '';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -149,13 +163,9 @@ class _CardAttachmentsWidgetState extends State<CardAttachmentsWidget> {
       ),
       child: Column(
         children: [
-          // File info row
           Row(
             children: [
-              Text(
-                _getFileEmoji(filename),
-                style: const TextStyle(fontSize: 24),
-              ),
+              Icon(Icons.insert_drive_file, color: Colors.blue[400]),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -163,26 +173,22 @@ class _CardAttachmentsWidgetState extends State<CardAttachmentsWidget> {
                   children: [
                     Text(
                       filename,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                       overflow: TextOverflow.ellipsis,
                     ),
+                    if (uploadedBy.toString().isNotEmpty || size.toString().isNotEmpty)
                     Text(
-                      'Uploaded by $uploadedBy • $size',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey[600],
-                      ),
+                        [
+                          if (uploadedBy.toString().isNotEmpty) 'Uploaded by $uploadedBy',
+                          if (size.toString().isNotEmpty) size.toString(),
+                        ].join(' • '),
+                        style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                       overflow: TextOverflow.ellipsis,
                     ),
+                    if (uploadedAt != null)
                     Text(
                       _formatDateTime(uploadedAt),
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.grey[500],
-                      ),
+                        style: TextStyle(fontSize: 10, color: Colors.grey[500]),
                     ),
                   ],
                 ),
@@ -190,29 +196,20 @@ class _CardAttachmentsWidgetState extends State<CardAttachmentsWidget> {
             ],
           ),
           const SizedBox(height: 8),
-          // Action buttons row
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
+              if (url.toString().isNotEmpty)
               TextButton(
                 onPressed: () => _downloadFile(url, filename),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  minimumSize: Size.zero,
-                ),
+                  style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4), minimumSize: Size.zero),
                 child: const Text('Download', style: TextStyle(fontSize: 12)),
               ),
               const SizedBox(width: 8),
               TextButton(
-                onPressed: () => _deleteAttachment(attachment),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  minimumSize: Size.zero,
-                ),
-                child: const Text(
-                  'Delete',
-                  style: TextStyle(color: Colors.red, fontSize: 12),
-                ),
+                onPressed: () => _confirmDeleteAttachment(attachment),
+                style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4), minimumSize: Size.zero),
+                child: const Text('Delete', style: TextStyle(color: Colors.red, fontSize: 12)),
               ),
             ],
           ),
@@ -221,165 +218,65 @@ class _CardAttachmentsWidgetState extends State<CardAttachmentsWidget> {
     );
   }
 
-  String _getFileEmoji(String filename) {
-    final extension = filename.split('.').last.toLowerCase();
+  Future<void> _pickAndUploadFile() async {
+    // 1) Ask for permission
+    final storageStatus = await Permission.storage.request();
+    if (!storageStatus.isGranted) {
+      Get.snackbar('Permission required', 'Storage access is needed to pick files');
+      return;
+    }
 
-    switch (extension) {
-      case 'pdf':
-        return '📄';
-      case 'doc':
-      case 'docx':
-        return '📝';
-      case 'xls':
-      case 'xlsx':
-        return '📊';
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-      case 'gif':
-        return '🖼️';
-      case 'mp4':
-      case 'avi':
-      case 'mov':
-        return '🎥';
-      case 'mp3':
-      case 'wav':
-      case 'flac':
-        return '🎵';
-      default:
-        return '📁';
+    // 2) Pick file
+    final result = await FilePicker.platform.pickFiles();
+    if (result == null || result.files.isEmpty || result.files.first.path == null) return;
+    final filePath = result.files.first.path!;
+
+    // 3) Upload
+    setState(() => _loading = true);
+    final ok = await _cardController.uploadAttachment(widget.card.id, filePath);
+    setState(() => _loading = false);
+
+    if (ok) {
+      await _loadAttachments();
+      // Backwards callback
+      final filename = filePath.split(Platform.pathSeparator).last;
+      widget.onAddAttachment(filename, '');
     }
   }
 
+  void _downloadFile(String url, String filename) async {
+    final uri = Uri.tryParse(url);
+    if (uri != null && (uri.isScheme('http') || uri.isScheme('https'))) {
+      final ok = await canLaunchUrl(uri);
+      if (ok) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        return;
+      }
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('No downloadable URL for $filename'), duration: const Duration(seconds: 2)),
+    );
+  }
 
-  void _showAddAttachmentDialog() {
-    final TextEditingController filenameController = TextEditingController();
-    final TextEditingController urlController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Attachment'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: filenameController,
-              decoration: const InputDecoration(
-                labelText: 'File Name',
-                hintText: 'Enter file name (e.g., document.pdf)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: urlController,
-              decoration: const InputDecoration(
-                labelText: 'File URL',
-                hintText: 'Enter file URL or path',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Note: In a real app, this would allow file upload from device storage.',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
-        ),
+  void _confirmDeleteAttachment(Map<String, dynamic> attachment) {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Delete Attachment'),
+        content: Text('Are you sure you want to delete "${attachment['fileName'] ?? attachment['filename']}"?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           ElevatedButton(
-            onPressed: () {
-              if (filenameController.text.trim().isNotEmpty &&
-                  urlController.text.trim().isNotEmpty) {
-                Navigator.of(context).pop();
-                _addAttachment(filenameController.text.trim(), urlController.text.trim());
+            onPressed: () async {
+              Get.back();
+              final id = attachment['_id'] ?? attachment['id'];
+              if (id == null) return;
+              final ok = await _cardController.removeAttachment(widget.card.id, id.toString());
+              if (ok) {
+                await _loadAttachments();
               }
             },
-            child: const Text('Add'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _addAttachment(String filename, String url) {
-    final newAttachment = {
-      'id': DateTime.now().millisecondsSinceEpoch.toString(),
-      'filename': filename,
-      'url': url,
-      'uploadedBy': 'Current User',
-      'uploadedAt': DateTime.now(),
-      'size': '${(filename.length * 0.1).toStringAsFixed(1)} MB', // Mock size
-    };
-
-    setState(() {
-      _mockAttachments.add(newAttachment);
-    });
-
-    // Call parent callback
-    widget.onAddAttachment(filename, url);
-  }
-
-  void _downloadFile(String url, String filename) {
-    // TODO: Implement file download
-    // For now, just show info
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Download feature would download: $filename'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
-  String _extractFilenameFromUrl(String url) {
-    try {
-      final uri = Uri.parse(url);
-      final pathSegments = uri.pathSegments;
-      if (pathSegments.isNotEmpty) {
-        return pathSegments.last;
-      }
-      return 'Unknown file';
-    } catch (e) {
-      return 'Unknown file';
-    }
-  }
-
-  void _deleteAttachment(Map<String, dynamic> attachment) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Attachment'),
-        content: Text('Are you sure you want to delete "${attachment['filename']}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              setState(() {
-                _mockAttachments.removeWhere((item) => item['id'] == attachment['id']);
-              });
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Deleted ${attachment['filename']}'),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -390,16 +287,10 @@ class _CardAttachmentsWidgetState extends State<CardAttachmentsWidget> {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
 
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m ago';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}d ago';
-    } else {
+    if (difference.inMinutes < 1) return 'Just now';
+    if (difference.inMinutes < 60) return '${difference.inMinutes}m ago';
+    if (difference.inHours < 24) return '${difference.inHours}h ago';
+    if (difference.inDays < 7) return '${difference.inDays}d ago';
       return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
-    }
   }
 }

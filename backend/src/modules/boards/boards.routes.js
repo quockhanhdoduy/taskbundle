@@ -64,7 +64,7 @@ router.get(
 router.put(
     '/v1/boards/:boardId/member-roles',
     AuthMiddleware.verifyToken,
-    BoardAuthz.verifyBoardGeneralUser,
+    BoardAuthz.verifyBoardAdmin,
     BoardsValidator.updateMemberRole,
     ActivityLoggerMiddleware.logActivity(ActivityTypes.BOARD_MEMBER_ROLE_CHANGED),
     BoardsController.updateMemberRole

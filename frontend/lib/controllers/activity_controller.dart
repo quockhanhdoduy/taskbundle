@@ -19,11 +19,11 @@ class ActivityController extends GetxController {
         activities.value = List<Map<String, dynamic>>.from(result['data'] ?? []);
       } else {
         errorMessage.value = result['message'] ?? 'Lỗi khi tải lịch sử hoạt động';
-        Get.snackbar('Lỗi', errorMessage.value);
+        Get.snackbar('Error', errorMessage.value);
       }
     } catch (e) {
       errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
-      Get.snackbar('Lỗi', errorMessage.value);
+      Get.snackbar('Error', errorMessage.value);
     } finally {
       isLoading.value = false;
     }

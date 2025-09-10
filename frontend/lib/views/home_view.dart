@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../config/routes.dart';
 import '../controllers/board_controller.dart';
+import '../controllers/auth_controller.dart';
+import '../services/sync_service.dart';
+import 'profile/profile_view.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -33,6 +36,9 @@ class _HomeViewState extends State<HomeView> {
 
       await boardController.loadBoardCounts();
 
+      // Load member counts
+      await boardController.loadBoardMemberCounts();
+
       // Completed loading
       setState(() {
         _isLoadingCounts = false;
@@ -45,10 +51,109 @@ class _HomeViewState extends State<HomeView> {
     super.didChangeDependencies();
     // Refresh board data when returning to home view
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkForSyncUpdates();
       setState(() {
         // Trigger rebuild to update counts
       });
     });
+  }
+
+  // Check if we need to refresh due to sync updates
+  void _checkForSyncUpdates() {
+    try {
+      final syncService = SyncService.instance;
+      if (syncService.homeRefreshNeeded.value) {
+        boardController.loadBoards();
+        syncService.resetHomeRefreshFlag();
+      }
+    } catch (e) {
+      // SyncService not available
+    }
+  }
+
+  // Handle menu actions
+  void _handleMenuAction(String action) {
+    switch (action) {
+      case 'profile':
+        _showProfile();
+        break;
+      case 'logout':
+        _showLogoutDialog();
+        break;
+    }
+  }
+
+  // Show profile view
+  void _showProfile() {
+    Get.to(() => const ProfileView())?.then((_) {
+      // Force refresh when returning from profile
+      // This ensures the profile view gets fresh data
+      setState(() {
+        // Trigger a rebuild to refresh any cached data
+      });
+    });
+  }
+
+  // Show logout confirmation dialog
+  void _showLogoutDialog() {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.logout, color: Colors.red),
+            SizedBox(width: 12),
+            Text('Logout'),
+          ],
+        ),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Are you sure you want to logout?'),
+            SizedBox(height: 8),
+            Text(
+              'You will need to login again to access your boards.',
+              style: TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => _logout(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Perform logout
+  void _logout() async {
+    try {
+      // Get AuthController and logout
+      final authController = Get.find<AuthController>();
+      await authController.logout();
+
+      // Navigate to login screen
+      Get.offAllNamed('/login');
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to logout: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red[100],
+        colorText: Colors.red[800],
+      );
+    }
   }
 
   @override
@@ -62,7 +167,21 @@ class _HomeViewState extends State<HomeView> {
     return Scaffold(
       resizeToAvoidBottomInset: true, // Allow resize when keyboard appears
       appBar: AppBar(
-        title: const Text('TaskBundle'),
+        title: const Text(
+          'TaskBundle',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 18,
+          ),
+        ),
+        backgroundColor: Colors.blue[700],
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        iconTheme: const IconThemeData(
+          color: Colors.white,
+        ),
         automaticallyImplyLeading: false, // Remove back button
         actions: [
           // Loading indicator for counts
@@ -85,6 +204,30 @@ class _HomeViewState extends State<HomeView> {
             onPressed: () {
               // TODO: Notifications
             },
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (String value) {
+              _handleMenuAction(value);
+            },
+            itemBuilder: (BuildContext context) => [
+              const PopupMenuItem<String>(
+                value: 'profile',
+                child: ListTile(
+                  leading: Icon(Icons.person),
+                  title: Text('Profile'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'logout',
+                child: ListTile(
+                  leading: Icon(Icons.logout, color: Colors.red),
+                  title: Text('Logout', style: TextStyle(color: Colors.red)),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -272,7 +415,10 @@ class _HomeViewState extends State<HomeView> {
                 }
 
                 return RefreshIndicator(
-                  onRefresh: () => boardController.refreshBoards(),
+                  onRefresh: () async {
+                    await boardController.refreshBoards();
+                    await boardController.loadBoardMemberCounts();
+                  },
                   child: ListView.builder(
                     itemCount: filteredBoards.length,
                     itemBuilder: (context, index) {
@@ -286,7 +432,7 @@ class _HomeViewState extends State<HomeView> {
                         child: _buildBoardCard(context, {
                           'id': board.id,
                           'name': board.name,
-                          'memberCount': 1, // Default for now
+                          'memberCount': boardController.getMemberCountForBoard(board.id),
                           'isOwner': isOwner,
                           'color': _getBoardColor(originalIndex),
                         }),

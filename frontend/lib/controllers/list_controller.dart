@@ -18,11 +18,11 @@ class ListController extends GetxController {
         lists.value = List<Map<String, dynamic>>.from(result['data'] ?? []);
       } else {
         errorMessage.value = result['message'] ?? 'Lỗi khi tải lists';
-        Get.snackbar('Lỗi', errorMessage.value);
+        Get.snackbar('Error', errorMessage.value);
       }
     } catch (e) {
       errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
-      Get.snackbar('Lỗi', errorMessage.value);
+      Get.snackbar('Error', errorMessage.value);
     } finally {
       isLoading.value = false;
     }
@@ -38,17 +38,17 @@ class ListController extends GetxController {
       });
 
       if (result['status'] == 'success' || result['success'] == true) {
-        Get.snackbar('Thành công', 'Tạo list thành công');
+        Get.snackbar('Success', 'Create list successfully');
         await getListsByBoard(boardId); // Refresh danh sách
         return true;
       } else {
         errorMessage.value = result['message'] ?? 'Tạo list thất bại';
-        Get.snackbar('Lỗi', errorMessage.value);
+        Get.snackbar('Error', errorMessage.value);
         return false;
       }
     } catch (e) {
       errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
-      Get.snackbar('Lỗi', errorMessage.value);
+      Get.snackbar('Error', errorMessage.value);
       return false;
     } finally {
       isLoading.value = false;
@@ -64,17 +64,17 @@ class ListController extends GetxController {
       });
 
       if (result['status'] == 'success' || result['success'] == true) {
-        Get.snackbar('Thành công', 'Cập nhật list thành công');
+        Get.snackbar('Success', 'Update list successfully');
         await getListsByBoard(boardId); // Refresh danh sách
         return true;
       } else {
         errorMessage.value = result['message'] ?? 'Cập nhật list thất bại';
-        Get.snackbar('Lỗi', errorMessage.value);
+        Get.snackbar('Error', errorMessage.value);
         return false;
       }
     } catch (e) {
       errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
-      Get.snackbar('Lỗi', errorMessage.value);
+      Get.snackbar('Error', errorMessage.value);
       return false;
     } finally {
       isLoading.value = false;
@@ -88,17 +88,17 @@ class ListController extends GetxController {
       final result = await ApiService.delete(ApiEndpoints.listDelete(listId));
 
       if (result['status'] == 'success' || result['success'] == true) {
-        Get.snackbar('Thành công', 'Xóa list thành công');
+        Get.snackbar('Success', 'Delete list successfully');
         await getListsByBoard(boardId); // Refresh danh sách
         return true;
       } else {
         errorMessage.value = result['message'] ?? 'Xóa list thất bại';
-        Get.snackbar('Lỗi', errorMessage.value);
+        Get.snackbar('Error', errorMessage.value);
         return false;
       }
     } catch (e) {
       errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
-      Get.snackbar('Lỗi', errorMessage.value);
+      Get.snackbar('Error', errorMessage.value);
       return false;
     } finally {
       isLoading.value = false;
@@ -114,17 +114,17 @@ class ListController extends GetxController {
       });
 
       if (result['status'] == 'success' || result['success'] == true) {
-        Get.snackbar('Thành công', 'Di chuyển list thành công');
+        Get.snackbar('Success', 'Move list successfully');
         await getListsByBoard(boardId); // Refresh danh sách
         return true;
       } else {
         errorMessage.value = result['message'] ?? 'Di chuyển list thất bại';
-        Get.snackbar('Lỗi', errorMessage.value);
+        Get.snackbar('Error', errorMessage.value);
         return false;
       }
     } catch (e) {
       errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
-      Get.snackbar('Lỗi', errorMessage.value);
+      Get.snackbar('Error', errorMessage.value);
       return false;
     } finally {
       isLoading.value = false;

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../../models/card.dart';
+import '../../../controllers/card_controller.dart';
 
 class CardCommentsWidget extends StatefulWidget {
   final TaskCard card;
@@ -18,11 +20,59 @@ class CardCommentsWidget extends StatefulWidget {
 class _CardCommentsWidgetState extends State<CardCommentsWidget> {
   final TextEditingController _commentController = TextEditingController();
   final List<Map<String, dynamic>> _comments = [];
+  late final CardController _cardController;
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    print('CardCommentsWidget: Initializing for card ${widget.card.id}');
+    _cardController = Get.find<CardController>(tag: 'card_detail_${widget.card.id}');
+    _loadComments();
+  }
 
   @override
   void dispose() {
     _commentController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadComments() async {
+    setState(() => _loading = true);
+    try {
+      final result = await _cardController.getCardComments(widget.card.id);
+      print('CardCommentsWidget: Load comments result: $result');
+
+      if ((result['success'] == true || result['status'] == 'success') && result['data'] != null) {
+        final data = result['data'];
+        List<dynamic> commentsList = [];
+
+        // Handle both array and object responses
+        if (data is List) {
+          commentsList = data;
+        } else if (data is Map && data.containsKey('comments')) {
+          // Backend returns { comments: [...], total: X, page: Y, ... }
+          commentsList = data['comments'] ?? [];
+        } else if (data is Map) {
+          // If data is a single comment object, wrap it in array
+          commentsList = [data];
+        }
+
+        setState(() {
+          _comments.clear();
+          _comments.addAll(commentsList.map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e)));
+        });
+        print('CardCommentsWidget: Loaded ${_comments.length} comments');
+      } else {
+        setState(() => _comments.clear());
+        print('CardCommentsWidget: No comments found or error');
+      }
+    } catch (e) {
+      print('CardCommentsWidget: Error loading comments: $e');
+      setState(() => _comments.clear());
+    } finally {
+      setState(() => _loading = false);
+    }
   }
 
   @override
@@ -48,13 +98,16 @@ class _CardCommentsWidgetState extends State<CardCommentsWidget> {
                 ),
               ),
               const Spacer(),
-              Text(
-                '${_comments.length} comment${_comments.length != 1 ? 's' : ''}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
+              if (_loading)
+                const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+              else
+                Text(
+                  '${_comments.length} comment${_comments.length != 1 ? 's' : ''}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -74,7 +127,7 @@ class _CardCommentsWidgetState extends State<CardCommentsWidget> {
                   decoration: const InputDecoration(
                     hintText: 'Write a comment...',
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
+                    contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                   ),
                   maxLines: 3,
                   minLines: 1,
@@ -131,6 +184,13 @@ class _CardCommentsWidgetState extends State<CardCommentsWidget> {
   }
 
   Widget _buildComment(Map<String, dynamic> comment) {
+    final author = comment['userId']?['name'] ?? comment['userId']?['email'] ?? 'Unknown User';
+    final authorInitial = author.isNotEmpty ? author[0].toUpperCase() : 'U';
+    final content = comment['content'] ?? comment['text'] ?? '';
+    final createdAt = comment['createdAt'] ?? comment['created_at'];
+    final isEdited = comment['isEdited'] == true;
+    final editedAt = comment['editedAt'];
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -148,7 +208,7 @@ class _CardCommentsWidgetState extends State<CardCommentsWidget> {
                 radius: 16,
                 backgroundColor: Colors.blue[100],
                 child: Text(
-                  comment['author'].toString().substring(0, 1).toUpperCase(),
+                  authorInitial,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -162,27 +222,62 @@ class _CardCommentsWidgetState extends State<CardCommentsWidget> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      comment['author'],
+                      author,
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
                       ),
                     ),
-                    Text(
-                      _formatDateTime(comment['createdAt']),
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey[600],
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          _formatDateTime(createdAt),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        if (isEdited) ...[
+                          const SizedBox(width: 4),
+                          Text(
+                            '(edited)',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.grey[500],
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ),
+              ),
+              PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'delete') {
+                    _confirmDeleteComment(comment);
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete, color: Colors.red, size: 16),
+                        SizedBox(width: 8),
+                        Text('Delete', style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
+                  ),
+                ],
+                child: Icon(Icons.more_vert, color: Colors.grey[400], size: 16),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
-            comment['text'],
+            content,
             style: const TextStyle(fontSize: 14),
           ),
         ],
@@ -190,28 +285,68 @@ class _CardCommentsWidgetState extends State<CardCommentsWidget> {
     );
   }
 
-  void _addComment() {
+  Future<void> _addComment() async {
     if (_commentController.text.trim().isEmpty) return;
 
-    final newComment = {
-      'id': DateTime.now().millisecondsSinceEpoch.toString(),
-      'text': _commentController.text.trim(),
-      'author': 'Current User', // In real app, this would be the logged-in user
-      'createdAt': DateTime.now(),
-    };
+    final content = _commentController.text.trim();
+    print('Creating comment: $content for card: ${widget.card.id}');
 
-    setState(() {
-      _comments.insert(0, newComment);
-      _commentController.clear();
-    });
+    _commentController.clear();
 
-    // Call the parent callback
-    widget.onAddComment(newComment['text'] as String);
+    final success = await _cardController.createComment(widget.card.id, content);
+    print('Comment creation result: $success');
+
+    if (success) {
+      await _loadComments();
+      // Call the parent callback
+      widget.onAddComment(content);
+    }
   }
 
-  String _formatDateTime(DateTime dateTime) {
+  void _confirmDeleteComment(Map<String, dynamic> comment) {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Delete Comment'),
+        content: const Text('Are you sure you want to delete this comment?'),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              Get.back();
+              final commentId = comment['_id'] ?? comment['id'];
+              if (commentId == null) return;
+
+              final success = await _cardController.deleteComment(commentId.toString());
+              if (success) {
+                await _loadComments();
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDateTime(dynamic dateTime) {
+    if (dateTime == null) return 'Unknown time';
+
+    DateTime dt;
+    if (dateTime is String) {
+      try {
+        dt = DateTime.parse(dateTime);
+      } catch (e) {
+        return 'Invalid date';
+      }
+    } else if (dateTime is DateTime) {
+      dt = dateTime;
+    } else {
+      return 'Invalid date';
+    }
+
     final now = DateTime.now();
-    final difference = now.difference(dateTime);
+    final difference = now.difference(dt);
 
     if (difference.inMinutes < 1) {
       return 'Just now';
@@ -222,7 +357,7 @@ class _CardCommentsWidgetState extends State<CardCommentsWidget> {
     } else if (difference.inDays < 7) {
       return '${difference.inDays}d ago';
     } else {
-      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+      return '${dt.day}/${dt.month}/${dt.year}';
     }
   }
 }

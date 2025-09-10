@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
 import '../config/api_endpoints.dart';
+import '../models/user.dart';
 
 class AuthController extends GetxController {
   final _storageService = StorageService();
@@ -10,6 +11,7 @@ class AuthController extends GetxController {
   var errorMessage = ''.obs;
   var successMessage = ''.obs;
   var isAuthenticated = false.obs;
+  var currentUser = Rx<User?>(null);
 
   // Clear all messages
   void clearMessages() {
@@ -121,8 +123,15 @@ class AuthController extends GetxController {
     if (token != null) {
       ApiService.setToken(token);
       isAuthenticated.value = true;
+
+      // Load user data from storage
+      final userData = await _storageService.getUserData();
+      if (userData != null) {
+        currentUser.value = User.fromJson(userData);
+      }
     } else {
       isAuthenticated.value = false;
+      currentUser.value = null;
     }
   }
 
@@ -151,6 +160,7 @@ class AuthController extends GetxController {
         // Save user data if available
         if (result['data']['user'] != null) {
           await _storageService.saveUserData(result['data']['user']);
+          currentUser.value = User.fromJson(result['data']['user']);
         }
 
         isAuthenticated.value = true;
@@ -264,6 +274,7 @@ class AuthController extends GetxController {
 
     // Clear all states
     isAuthenticated.value = false;
+    currentUser.value = null;
     clearMessages();
 
     Get.offAllNamed('/login');

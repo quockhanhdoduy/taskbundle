@@ -20,12 +20,12 @@ class CardHeaderWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.blue[700],
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 3,
             offset: const Offset(0, 1),
@@ -37,7 +37,7 @@ class CardHeaderWidget extends StatelessWidget {
           // Back button
           IconButton(
             onPressed: onBack,
-            icon: const Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
             padding: EdgeInsets.zero,
           ),
           const SizedBox(width: 8),
@@ -68,6 +68,7 @@ class CardHeaderWidget extends StatelessWidget {
               ),
             ),
 
+
           // Card title
           Expanded(
             child: Text(
@@ -75,6 +76,7 @@ class CardHeaderWidget extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -84,7 +86,7 @@ class CardHeaderWidget extends StatelessWidget {
           if (onEditTitle != null)
             IconButton(
               onPressed: onEditTitle,
-              icon: const Icon(Icons.edit, size: 20),
+              icon: const Icon(Icons.edit, size: 20, color: Colors.white),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(
                 minWidth: 32,

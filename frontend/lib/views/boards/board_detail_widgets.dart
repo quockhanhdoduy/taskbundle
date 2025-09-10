@@ -17,10 +17,22 @@ class BoardDetailWidgets {
       appBar: AppBar(
         title: Obx(() => Text(
           controller.currentBoard.value?.name ?? boardName ?? 'Loading...',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 18,
+          ),
         )),
+        backgroundColor: Colors.blue[700],
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        iconTheme: const IconThemeData(
+          color: Colors.white,
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.group_add),
+            icon: const Icon(Icons.group_add, color: Colors.white),
             onPressed: () {
               // TODO: Invite members
             },
@@ -496,58 +508,106 @@ class BoardDetailWidgets {
         }
       },
       builder: (context, candidateData, rejectedData) {
-        return GestureDetector(
-          onTap: () {
-            // Open card detail
-            if (card.id.isEmpty) {
-              Get.snackbar('Error', 'Card ID is empty');
-              return;
-            }
-            final route = AppRoutes.cardDetail.replaceAll(':cardId', card.id);
-            Get.toNamed(route);
-          },
-          child: LongPressDraggable<Map<String, dynamic>>(
-          key: Key('card_${card.id}'),
-          data: {
-            'cardId': card.id,
-            'listId': listId,
-            'index': index,
-          },
-          onDragStarted: onDragStarted,
-          onDragEnd: (details) => onDragEnd(),
-      feedback: Material(
-        elevation: 4,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          width: 256,
-          child: buildCardContent(card, showInkWell: false),
-        ),
-      ),
-      childWhenDragging: Container(
-        decoration: BoxDecoration(
-          color: Colors.grey[200],
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[400]!, width: 2),
-        ),
-        padding: const EdgeInsets.all(12),
-        child: Text(
-          card.title,
-          style: TextStyle(
-            fontWeight: FontWeight.w500,
-            color: Colors.grey[600],
-          ),
-        ),
-      ),
-          child: Container(
-            decoration: candidateData.isNotEmpty
-                ? BoxDecoration(
+        return Stack(
+          children: [
+            GestureDetector(
+              onTap: () {
+                if (card.id.isEmpty) {
+                  Get.snackbar('Error', 'Card ID is empty');
+                  return;
+                }
+                final route = AppRoutes.cardDetail.replaceAll(':cardId', card.id);
+                Get.toNamed(route);
+              },
+              child: LongPressDraggable<Map<String, dynamic>>(
+                key: Key('card_${card.id}'),
+                data: {
+                  'cardId': card.id,
+                  'listId': listId,
+                  'index': index,
+                },
+                onDragStarted: onDragStarted,
+                onDragEnd: (details) => onDragEnd(),
+                feedback: Material(
+                  elevation: 4,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    width: 256,
+                    child: buildCardContent(card, showInkWell: false),
+                  ),
+                ),
+                childWhenDragging: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue, width: 2),
-                  )
-                : null,
-      child: buildCard(card),
+                    border: Border.all(color: Colors.grey[400]!, width: 2),
+                  ),
+                  padding: const EdgeInsets.all(12),
+                  child: Text(
+                    card.title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ),
+                child: Container(
+                  decoration: candidateData.isNotEmpty
+                      ? BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.blue, width: 2),
+                        )
+                      : null,
+                  child: buildCardWithCheckboxGap(card),
+                ),
+              ),
             ),
-          ),
+            Positioned(
+              top: 12,
+              left: 12,
+              child: GestureDetector(
+                onTap: () {
+                  _toggleCardCompletion(card, controller);
+                },
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  width: 20,
+                  height: 20,
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 1.5,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: card.isCompleted ? Colors.green : Colors.grey[400]!,
+                        width: 2,
+                      ),
+                      color: card.isCompleted ? Colors.green : Colors.transparent,
+                    ),
+                    child: card.isCompleted
+                        ? const Icon(
+                            Icons.check,
+                            color: Colors.white,
+                            size: 10,
+                          )
+                        : null,
+                  ),
+                ),
+              ),
+            ),
+          ],
         );
       },
     );
@@ -559,6 +619,15 @@ class BoardDetailWidgets {
       key: key,
       margin: const EdgeInsets.only(bottom: 6),
       child: buildCardContent(card, showInkWell: true),
+    );
+  }
+
+  // Build card with reserved space for checkbox on the left
+  static Widget buildCardWithCheckboxGap(TaskCard card, {Key? key}) {
+    return Container(
+      key: key,
+      margin: const EdgeInsets.only(bottom: 6),
+      child: buildCardContentWithCheckboxGap(card),
     );
   }
 
@@ -591,40 +660,9 @@ class BoardDetailWidgets {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Title with completion checkbox
+          // Title only (checkbox removed)
           Row(
             children: [
-              // Completion checkbox
-              GestureDetector(
-                onTap: () => _toggleCardCompletion(card, Get.find<BoardController>()),
-                behavior: HitTestBehavior.opaque,
-                child: Container(
-                  width: 26, // Increased hit area
-                  height: 26, // Increased hit area
-                  padding: const EdgeInsets.all(4),
-                  margin: const EdgeInsets.only(right: 8),
-                  child: Container(
-                    width: 18,
-                    height: 18,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: card.isCompleted ? Colors.green : Colors.grey[400]!,
-                        width: 2,
-                      ),
-                      color: card.isCompleted ? Colors.green : Colors.transparent,
-                    ),
-                    child: card.isCompleted
-                        ? const Icon(
-                            Icons.check,
-                            color: Colors.white,
-                            size: 12,
-                          )
-                        : null,
-                  ),
-                ),
-              ),
-
               // Title
               Expanded(
                 child: Text(
@@ -644,34 +682,57 @@ class BoardDetailWidgets {
             ],
           ),
 
-          // Due date (if exists)
-          if (card.dueDate != null) ...[
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                Icon(
-                  Icons.schedule,
-                  size: 12,
-                  color: _getDueDateColor(card.dueDate!),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  _formatDueDate(card.dueDate!),
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: _getDueDateColor(card.dueDate!),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ],
+          // Removed due date display as requested
         ],
       ),
     );
 
     // InkWell không cần thiết vì đã có GestureDetector ở level cao hơn
     return content;
+  }
+
+  // Build card content with extra left padding to avoid overlapping with checkbox
+  static Widget buildCardContentWithCheckboxGap(TaskCard card) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[300]!, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.fromLTRB(40, 12, 12, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  card.title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    decoration: card.isCompleted
+                        ? TextDecoration.lineThrough
+                        : TextDecoration.none,
+                    color: card.isCompleted
+                        ? Colors.grey[600]
+                        : Colors.black,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   // Build card content without checkbox (for draggable feedback)
@@ -709,28 +770,7 @@ class BoardDetailWidgets {
             ),
           ),
 
-          // Due date (if exists)
-          if (card.dueDate != null) ...[
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(
-                  Icons.schedule,
-                  size: 14,
-                  color: _getDueDateColor(card.dueDate!),
-                ),
-                const SizedBox(width: 4),
-            Text(
-                  _formatDueDate(card.dueDate!),
-              style: TextStyle(
-                fontSize: 12,
-                    color: _getDueDateColor(card.dueDate!),
-                    fontWeight: FontWeight.w500,
-              ),
-                ),
-              ],
-            ),
-          ],
+          // Removed due date display as requested
         ],
       ),
     );
@@ -749,37 +789,7 @@ class BoardDetailWidgets {
     }
   }
 
-  // Get due date color based on status
-  static Color _getDueDateColor(DateTime dueDate) {
-    final now = DateTime.now();
-    final difference = dueDate.difference(now).inDays;
-
-    if (difference < 0) {
-      return Colors.red; // Overdue
-    } else if (difference == 0) {
-      return Colors.orange; // Due today
-    } else if (difference <= 3) {
-      return Colors.amber; // Due soon
-    } else {
-      return Colors.green; // Not urgent
-    }
-  }
-
-  // Format due date for display
-  static String _formatDueDate(DateTime dueDate) {
-    final now = DateTime.now();
-    final difference = dueDate.difference(now).inDays;
-
-    if (difference < 0) {
-      return '${(-difference)} days ago';
-    } else if (difference == 0) {
-      return 'Today';
-    } else if (difference == 1) {
-      return 'Tomorrow';
-    } else {
-      return '$difference days left';
-    }
-  }
+  // Due date helpers removed as due date is no longer displayed
 
   // Build add list column
   static Widget buildAddListColumn(BoardController controller) {

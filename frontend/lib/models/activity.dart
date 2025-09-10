@@ -1,7 +1,66 @@
-import 'user.dart';
-import 'board.dart';
-import '../utils/constants.dart';
+// Activity Types enum matching backend
+enum ActivityType {
+  // Board activities
+  boardCreated('BOARD_CREATED'),
+  boardUpdated('BOARD_UPDATED'),
+  boardMemberAdded('BOARD_MEMBER_ADDED'),
+  boardMemberRemoved('BOARD_MEMBER_REMOVED'),
+  boardMemberRoleChanged('BOARD_MEMBER_ROLE_CHANGED'),
 
+  // List activities
+  listCreated('LIST_CREATED'),
+  listUpdated('LIST_UPDATED'),
+  listDeleted('LIST_DELETED'),
+  listMoved('LIST_MOVED'),
+
+  // Card activities
+  cardCreated('CARD_CREATED'),
+  cardUpdated('CARD_UPDATED'),
+  cardDeleted('CARD_DELETED'),
+  cardMoved('CARD_MOVED'),
+  cardAssigned('CARD_ASSIGNED'),
+  cardUnassigned('CARD_UNASSIGNED'),
+  cardCompleted('CARD_COMPLETED'),
+  cardUncompleted('CARD_UNCOMPLETED'),
+  cardDueDateSet('CARD_DUE_DATE_SET'),
+  cardDueDateChanged('CARD_DUE_DATE_CHANGED'),
+  cardDueDateRemoved('CARD_DUE_DATE_REMOVED'),
+  cardAttachmentAdded('CARD_ATTACHMENT_ADDED'),
+  cardAttachmentRemoved('CARD_ATTACHMENT_REMOVED'),
+
+  // Comment activities
+  commentAdded('COMMENT_ADDED');
+
+  const ActivityType(this.value);
+  final String value;
+
+  static ActivityType fromString(String value) {
+    for (ActivityType type in ActivityType.values) {
+      if (type.value == value) return type;
+    }
+    return ActivityType.cardCreated; // Default fallback
+  }
+}
+
+// Entity Types enum matching backend
+enum EntityType {
+  board('board'),
+  list('list'),
+  card('card'),
+  comment('comment');
+
+  const EntityType(this.value);
+  final String value;
+
+  static EntityType fromString(String value) {
+    for (EntityType type in EntityType.values) {
+      if (type.value == value) return type;
+    }
+    return EntityType.board; // Default fallback
+  }
+}
+
+// Activity model matching backend schema
 class Activity {
   final String id;
   final ActivityType type;
@@ -11,11 +70,9 @@ class Activity {
   final String entityId;
   final String description;
   final DateTime createdAt;
-  final User? user;
-  final Board? board;
-  final String? entityName;
+  final ActivityUser? user;
 
-  const Activity({
+  Activity({
     required this.id,
     required this.type,
     required this.userId,
@@ -25,29 +82,27 @@ class Activity {
     required this.description,
     required this.createdAt,
     this.user,
-    this.board,
-    this.entityName,
   });
 
   factory Activity.fromJson(Map<String, dynamic> json) {
     return Activity(
       id: json['_id'] ?? json['id'] ?? '',
       type: ActivityType.fromString(json['type'] ?? ''),
-      userId: json['userId'] ?? '',
+      userId: json['userId'] is String ? json['userId'] : json['userId']?['_id'] ?? '',
       boardId: json['boardId'] ?? '',
-      entityType: EntityType.fromString(json['entityType'] ?? ''),
+      entityType: EntityType.fromString(json['entityType'] ?? 'board'),
       entityId: json['entityId'] ?? '',
       description: json['description'] ?? '',
-      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
-      user: json['user'] != null ? User.fromJson(json['user']) : null,
-      board: json['board'] != null ? Board.fromJson(json['board']) : null,
-      entityName: json['entityName'],
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : DateTime.now(),
+      user: json['userId'] is Map ? ActivityUser.fromJson(json['userId']) : null,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      '_id': id,
+      'id': id,
       'type': type.value,
       'userId': userId,
       'boardId': boardId,
@@ -56,161 +111,176 @@ class Activity {
       'description': description,
       'createdAt': createdAt.toIso8601String(),
       'user': user?.toJson(),
-      'board': board?.toJson(),
-      'entityName': entityName,
     };
   }
 
-  Activity copyWith({
-    String? id,
-    ActivityType? type,
-    String? userId,
-    String? boardId,
-    EntityType? entityType,
-    String? entityId,
-    String? description,
-    DateTime? createdAt,
-    User? user,
-    Board? board,
-    String? entityName,
-  }) {
-    return Activity(
-      id: id ?? this.id,
-      type: type ?? this.type,
-      userId: userId ?? this.userId,
-      boardId: boardId ?? this.boardId,
-      entityType: entityType ?? this.entityType,
-      entityId: entityId ?? this.entityId,
-      description: description ?? this.description,
-      createdAt: createdAt ?? this.createdAt,
-      user: user ?? this.user,
-      board: board ?? this.board,
-      entityName: entityName ?? this.entityName,
-    );
+  // Activity type helpers
+  bool get isBoardActivity => entityType == EntityType.board;
+  bool get isListActivity => entityType == EntityType.list;
+  bool get isCardActivity => entityType == EntityType.card;
+  bool get isCommentActivity => entityType == EntityType.comment;
+
+  // Get activity icon based on type
+  String get activityIcon {
+    switch (type) {
+      case ActivityType.boardCreated:
+        return '🏗️';
+      case ActivityType.boardUpdated:
+        return '✏️';
+      case ActivityType.boardMemberAdded:
+        return '👥';
+      case ActivityType.boardMemberRemoved:
+        return '👋';
+      case ActivityType.boardMemberRoleChanged:
+        return '🔄';
+      case ActivityType.listCreated:
+        return '📋';
+      case ActivityType.listUpdated:
+        return '✏️';
+      case ActivityType.listDeleted:
+        return '🗑️';
+      case ActivityType.listMoved:
+        return '↔️';
+      case ActivityType.cardCreated:
+        return '📝';
+      case ActivityType.cardUpdated:
+        return '✏️';
+      case ActivityType.cardDeleted:
+        return '🗑️';
+      case ActivityType.cardMoved:
+        return '↔️';
+      case ActivityType.cardAssigned:
+        return '👤';
+      case ActivityType.cardUnassigned:
+        return '👤';
+      case ActivityType.cardCompleted:
+        return '✅';
+      case ActivityType.cardUncompleted:
+        return '⏳';
+      case ActivityType.cardDueDateSet:
+      case ActivityType.cardDueDateChanged:
+        return '📅';
+      case ActivityType.cardDueDateRemoved:
+        return '📅';
+      case ActivityType.cardAttachmentAdded:
+        return '📎';
+      case ActivityType.cardAttachmentRemoved:
+        return '📎';
+      case ActivityType.commentAdded:
+        return '💬';
+    }
   }
 
+  // Get activity color based on entity type
+  String get activityColor {
+    switch (entityType) {
+      case EntityType.board:
+        return '#4CAF50'; // Green
+      case EntityType.list:
+        return '#2196F3'; // Blue
+      case EntityType.card:
+        return '#FF9800'; // Orange
+      case EntityType.comment:
+        return '#9C27B0'; // Purple
+    }
+  }
+
+  // Get formatted time ago
   String get timeAgo {
     final now = DateTime.now();
     final difference = now.difference(createdAt);
 
-    if (difference.inDays > 0) {
-      return '${difference.inDays} day${difference.inDays > 1 ? 's' : ''} ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours} hour${difference.inHours > 1 ? 's' : ''} ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''} ago';
-    } else {
+    if (difference.inMinutes < 1) {
       return 'Just now';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes}m ago';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays}d ago';
+    } else {
+      return '${createdAt.day}/${createdAt.month}/${createdAt.year}';
     }
   }
 
-    String get formattedDescription {
-    final userName = user?.name ?? 'Someone';
-    final entityNameDisplay = entityName != null ? '"$entityName"' : entityType.value;
-
+  // Get display name for activity type
+  String get displayName {
     switch (type) {
-      // Board activities
       case ActivityType.boardCreated:
-        return '$userName created board $entityNameDisplay';
+        return 'Board Created';
       case ActivityType.boardUpdated:
-        return '$userName updated board $entityNameDisplay';
+        return 'Board Updated';
       case ActivityType.boardMemberAdded:
-        return '$userName added member to board $entityNameDisplay';
+        return 'Member Added';
       case ActivityType.boardMemberRemoved:
-        return '$userName removed member from board $entityNameDisplay';
+        return 'Member Removed';
       case ActivityType.boardMemberRoleChanged:
-        return '$userName changed member role in board $entityNameDisplay';
-
-      // List activities
+        return 'Role Changed';
       case ActivityType.listCreated:
-        return '$userName created list $entityNameDisplay';
+        return 'List Created';
       case ActivityType.listUpdated:
-        return '$userName updated list $entityNameDisplay';
+        return 'List Updated';
       case ActivityType.listDeleted:
-        return '$userName deleted list $entityNameDisplay';
+        return 'List Deleted';
       case ActivityType.listMoved:
-        return '$userName moved list $entityNameDisplay';
-
-      // Card activities
+        return 'List Moved';
       case ActivityType.cardCreated:
-        return '$userName created card $entityNameDisplay';
+        return 'Card Created';
       case ActivityType.cardUpdated:
-        return '$userName updated card $entityNameDisplay';
+        return 'Card Updated';
       case ActivityType.cardDeleted:
-        return '$userName deleted card $entityNameDisplay';
+        return 'Card Deleted';
       case ActivityType.cardMoved:
-        return '$userName moved card $entityNameDisplay';
+        return 'Card Moved';
       case ActivityType.cardAssigned:
-        return '$userName assigned card $entityNameDisplay';
+        return 'Card Assigned';
       case ActivityType.cardUnassigned:
-        return '$userName unassigned card $entityNameDisplay';
+        return 'Card Unassigned';
       case ActivityType.cardCompleted:
-        return '$userName completed card $entityNameDisplay';
+        return 'Card Completed';
       case ActivityType.cardUncompleted:
-        return '$userName marked card $entityNameDisplay as incomplete';
+        return 'Card Uncompleted';
       case ActivityType.cardDueDateSet:
-        return '$userName set due date for card $entityNameDisplay';
+        return 'Due Date Set';
       case ActivityType.cardDueDateChanged:
-        return '$userName changed due date for card $entityNameDisplay';
+        return 'Due Date Changed';
       case ActivityType.cardDueDateRemoved:
-        return '$userName removed due date from card $entityNameDisplay';
+        return 'Due Date Removed';
       case ActivityType.cardAttachmentAdded:
-        return '$userName added attachment to card $entityNameDisplay';
+        return 'Attachment Added';
       case ActivityType.cardAttachmentRemoved:
-        return '$userName removed attachment from card $entityNameDisplay';
-
-      // Comment activities
+        return 'Attachment Removed';
       case ActivityType.commentAdded:
-        return '$userName added comment to card $entityNameDisplay';
+        return 'Comment Added';
     }
   }
+}
 
-  bool get isBoardActivity {
-    return type == ActivityType.boardCreated ||
-           type == ActivityType.boardUpdated ||
-           type == ActivityType.boardMemberAdded ||
-           type == ActivityType.boardMemberRemoved ||
-           type == ActivityType.boardMemberRoleChanged;
+// User model for activity (populated from backend)
+class ActivityUser {
+  final String id;
+  final String name;
+  final String email;
+
+  ActivityUser({
+    required this.id,
+    required this.name,
+    required this.email,
+  });
+
+  factory ActivityUser.fromJson(Map<String, dynamic> json) {
+    return ActivityUser(
+      id: json['_id'] ?? json['id'] ?? '',
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
+    );
   }
 
-  bool get isListActivity {
-    return type == ActivityType.listCreated ||
-           type == ActivityType.listUpdated ||
-           type == ActivityType.listDeleted ||
-           type == ActivityType.listMoved;
-  }
-
-  bool get isCardActivity {
-    return type == ActivityType.cardCreated ||
-           type == ActivityType.cardUpdated ||
-           type == ActivityType.cardDeleted ||
-           type == ActivityType.cardMoved ||
-           type == ActivityType.cardAssigned ||
-           type == ActivityType.cardUnassigned ||
-           type == ActivityType.cardCompleted ||
-           type == ActivityType.cardUncompleted ||
-           type == ActivityType.cardDueDateSet ||
-           type == ActivityType.cardDueDateChanged ||
-           type == ActivityType.cardDueDateRemoved ||
-           type == ActivityType.cardAttachmentAdded ||
-           type == ActivityType.cardAttachmentRemoved;
-  }
-
-  bool get isCommentActivity {
-    return type == ActivityType.commentAdded;
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is Activity && other.id == id;
-  }
-
-  @override
-  int get hashCode => id.hashCode;
-
-  @override
-  String toString() {
-    return 'Activity(id: $id, type: ${type.value}, userId: $userId, boardId: $boardId, entityType: ${entityType.value}, entityName: $entityName)';
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'email': email,
+    };
   }
 }

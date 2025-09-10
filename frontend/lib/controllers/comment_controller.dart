@@ -19,11 +19,11 @@ class CommentController extends GetxController {
         comments.value = List<Map<String, dynamic>>.from(result['data'] ?? []);
       } else {
         errorMessage.value = result['message'] ?? 'Lỗi khi tải comments';
-        Get.snackbar('Lỗi', errorMessage.value);
+        Get.snackbar('Error', errorMessage.value);
       }
     } catch (e) {
       errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
-      Get.snackbar('Lỗi', errorMessage.value);
+      Get.snackbar('Error', errorMessage.value);
     } finally {
       isLoading.value = false;
     }
@@ -40,17 +40,17 @@ class CommentController extends GetxController {
       });
 
       if (result['status'] == 'success' || result['success'] == true) {
-        Get.snackbar('Thành công', 'Tạo comment thành công');
+        Get.snackbar('Success', 'Create comment successfully');
         await getCardComments(cardId); // Refresh danh sách
         return true;
       } else {
         errorMessage.value = result['message'] ?? 'Tạo comment thất bại';
-        Get.snackbar('Lỗi', errorMessage.value);
+        Get.snackbar('Error', errorMessage.value);
         return false;
       }
     } catch (e) {
       errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
-      Get.snackbar('Lỗi', errorMessage.value);
+      Get.snackbar('Error', errorMessage.value);
       return false;
     } finally {
       isLoading.value = false;
@@ -66,7 +66,7 @@ class CommentController extends GetxController {
       return await ApiService.get(ApiEndpoints.commentDetail(commentId));
     } catch (e) {
       errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
-      Get.snackbar('Lỗi', errorMessage.value);
+      Get.snackbar('Error', errorMessage.value);
       return {'success': false, 'message': errorMessage.value};
     } finally {
       isLoading.value = false;
@@ -83,17 +83,17 @@ class CommentController extends GetxController {
       });
 
       if (result['status'] == 'success' || result['success'] == true) {
-        Get.snackbar('Thành công', 'Cập nhật comment thành công');
+        Get.snackbar('Success', 'Update comment successfully');
         await getCardComments(cardId); // Refresh danh sách
         return true;
       } else {
         errorMessage.value = result['message'] ?? 'Cập nhật comment thất bại';
-        Get.snackbar('Lỗi', errorMessage.value);
+        Get.snackbar('Error', errorMessage.value);
         return false;
       }
     } catch (e) {
       errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
-      Get.snackbar('Lỗi', errorMessage.value);
+      Get.snackbar('Error', errorMessage.value);
       return false;
     } finally {
       isLoading.value = false;
@@ -108,17 +108,17 @@ class CommentController extends GetxController {
       final result = await ApiService.delete(ApiEndpoints.commentDelete(commentId));
 
       if (result['status'] == 'success' || result['success'] == true) {
-        Get.snackbar('Thành công', 'Xóa comment thành công');
+        Get.snackbar('Success', 'Delete comment successfully');
         await getCardComments(cardId); // Refresh danh sách
         return true;
       } else {
         errorMessage.value = result['message'] ?? 'Xóa comment thất bại';
-        Get.snackbar('Lỗi', errorMessage.value);
+        Get.snackbar('Error', errorMessage.value);
         return false;
       }
     } catch (e) {
       errorMessage.value = 'Lỗi kết nối: ${e.toString()}';
-      Get.snackbar('Lỗi', errorMessage.value);
+      Get.snackbar('Error', errorMessage.value);
       return false;
     } finally {
       isLoading.value = false;

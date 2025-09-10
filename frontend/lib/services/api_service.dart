@@ -266,6 +266,65 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> deleteWithBody(String endpoint, Map<String, dynamic> data) async {
+    try {
+      final request = http.Request('DELETE', Uri.parse('$baseUrl$endpoint'))
+        ..headers.addAll(_headers)
+        ..body = jsonEncode(data);
+      final response = await http.Client().send(request);
+      final resp = await http.Response.fromStream(response);
+
+      if (resp.statusCode >= 200 && resp.statusCode < 300) {
+        final decoded = jsonDecode(resp.body);
+        return Map<String, dynamic>.from(decoded);
+      } else {
+        try {
+          final errorBody = jsonDecode(resp.body);
+          String errorMessage = 'HTTP ${resp.statusCode}: ${resp.reasonPhrase}';
+          if (errorBody is Map<String, dynamic>) {
+            if (errorBody['message'] != null) {
+              if (errorBody['message'] is String) {
+                errorMessage = errorBody['message'];
+              } else if (errorBody['message'] is Map<String, dynamic>) {
+                var msgObj = errorBody['message'] as Map<String, dynamic>;
+                if (msgObj['data'] is List) {
+                  List<String> errors = List<String>.from(msgObj['data']);
+                  errorMessage = errors.join(', ');
+                }
+              }
+            } else if (errorBody['error'] is String) {
+              errorMessage = errorBody['error'];
+            } else if (errorBody['details'] is String) {
+              errorMessage = errorBody['details'];
+            }
+          }
+          return {
+            'status': 'error',
+            'success': false,
+            'message': errorMessage,
+            'data': errorBody,
+            'statusCode': resp.statusCode
+          };
+        } catch (_) {
+          return {
+            'status': 'error',
+            'success': false,
+            'message': 'HTTP ${resp.statusCode}: ${resp.reasonPhrase}',
+            'data': null,
+            'statusCode': resp.statusCode
+          };
+        }
+      }
+    } catch (e) {
+      return {
+        'status': 'error',
+        'success': false,
+        'message': 'Connection error: ${e.toString()}',
+        'data': null
+      };
+    }
+  }
+
   static Future<Map<String, dynamic>> uploadFile(String endpoint, String filePath, Map<String, String>? fields) async {
     var request = http.MultipartRequest('POST', Uri.parse('$baseUrl$endpoint'));
 

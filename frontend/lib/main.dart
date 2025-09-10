@@ -5,6 +5,7 @@ import 'config/app_theme.dart';
 import 'config/routes.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/board_controller.dart';
+import 'services/sync_service.dart';
 
 void main() {
   // Tắt debug mode trong production
@@ -43,6 +44,9 @@ class MyApp extends StatelessWidget {
   }
 
   void _initializeControllers() {
+    // Initialize sync service first
+    Get.put(SyncService(), permanent: true);
+
     // Initialize core controllers
     Get.put(AuthController());
     Get.put(BoardController());

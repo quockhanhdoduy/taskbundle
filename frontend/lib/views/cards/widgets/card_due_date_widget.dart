@@ -61,15 +61,33 @@ class CardDueDateWidget extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  _formatDueDate(),
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: _getDueDateColor(),
-                    fontWeight: FontWeight.w500,
+                Expanded(
+                  child: Text(
+                    _formatDueDate(),
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: _getDueDateColor(),
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
-                const Spacer(),
+                if (_isOverdue())
+                  Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.red[800],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'OVERDUE',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 TextButton(
                   onPressed: onRemoveDueDate,
                   child: const Text(
@@ -92,6 +110,11 @@ class CardDueDateWidget extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  bool _isOverdue() {
+    if (card.dueDate == null || card.isCompleted) return false;
+    return card.dueDate!.isBefore(DateTime.now());
   }
 
   Color _getDueDateColor() {
@@ -135,10 +158,14 @@ class CardDueDateWidget extends StatelessWidget {
   }
 
   Future<void> _showDatePicker(BuildContext context) async {
+    final now = DateTime.now();
+    final initialDate = card.dueDate ?? now;
+    final firstDate = initialDate.isBefore(now) ? initialDate : now;
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: card.dueDate ?? DateTime.now(),
-      firstDate: DateTime.now(),
+      initialDate: initialDate,
+      firstDate: firstDate,
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
 

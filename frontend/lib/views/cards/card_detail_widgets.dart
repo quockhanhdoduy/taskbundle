@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import '../../models/card.dart';
 
 class CardDetailWidgets {
@@ -13,10 +12,24 @@ class CardDetailWidgets {
   ) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(card?.title ?? 'Card Detail'),
+        title: Text(
+          card?.title ?? 'Card Detail',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 18,
+          ),
+        ),
+        backgroundColor: Colors.blue[700],
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        iconTheme: const IconThemeData(
+          color: Colors.white,
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_vert),
+            icon: const Icon(Icons.more_vert, color: Colors.white),
             onPressed: () {
               // TODO: Card options menu
             },

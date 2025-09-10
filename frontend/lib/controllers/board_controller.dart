@@ -4,6 +4,9 @@ import '../models/list.dart';
 import '../models/card.dart';
 import '../models/board.dart';
 import '../services/board_service.dart';
+import '../services/sync_service.dart';
+import '../services/api_service.dart';
+import '../config/api_endpoints.dart';
 import 'auth_controller.dart';
 import 'card_controller.dart';
 
@@ -19,6 +22,9 @@ class BoardController extends GetxController {
   final RxList<Board> ownerBoards = <Board>[].obs;
   final RxList<Board> invitedBoards = <Board>[].obs;
 
+  // Board member counts cache
+  final RxMap<String, int> boardMemberCounts = <String, int>{}.obs;
+
   // Current board details
   final Rx<Board?> currentBoard = Rx<Board?>(null);
 
@@ -28,6 +34,9 @@ class BoardController extends GetxController {
   void onInit() {
     super.onInit();
     // Don't load data in onInit, wait for onReady
+
+    // Listen to sync events
+    _setupSyncListeners();
   }
 
   @override
@@ -61,6 +70,174 @@ class BoardController extends GetxController {
 
     // Reload data
     await loadBoardData();
+  }
+
+  /// Update board name
+  Future<bool> updateBoardName(String newName) async {
+    if (boardId == null || boardId!.isEmpty) return false;
+
+    try {
+      isLoading.value = true;
+      error.value = '';
+
+      final result = await BoardService.updateBoard(boardId!, {'name': newName});
+
+      if (result['success'] == true || result['status'] == 'success') {
+        // Update local state
+        if (currentBoard.value != null) {
+          currentBoard.value = currentBoard.value!.copyWith(name: newName);
+          // Force reactive update
+          currentBoard.refresh();
+        }
+
+        // Update board in lists
+        final boardIndex = allBoards.indexWhere((b) => b.id == boardId);
+        if (boardIndex != -1) {
+          allBoards[boardIndex] = allBoards[boardIndex].copyWith(name: newName);
+          allBoards.refresh();
+        }
+
+        // Force multiple update mechanisms
+        _forceUIUpdate();
+        print('BoardController: Updated board name to $newName, calling _forceUIUpdate()');
+
+        // Notify other controllers about the change
+        SyncService.instance.notifyBoardUpdated(boardId!, updatedBoard: currentBoard.value);
+
+        return true;
+      } else {
+        error.value = result['message'] ?? 'Failed to update board name';
+        return false;
+      }
+    } catch (e) {
+      error.value = e.toString();
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// Delete board
+  Future<bool> deleteBoard() async {
+    if (boardId == null || boardId!.isEmpty) return false;
+
+    try {
+      isLoading.value = true;
+      error.value = '';
+
+      final result = await BoardService.deleteBoard(boardId!);
+
+      if (result['success'] == true || result['status'] == 'success') {
+        // Remove from local lists
+        allBoards.removeWhere((b) => b.id == boardId);
+        ownerBoards.removeWhere((b) => b.id == boardId);
+        invitedBoards.removeWhere((b) => b.id == boardId);
+
+        // Clear current board data
+        currentBoard.value = null;
+        lists.clear();
+        cardsByList.clear();
+
+        // Notify other controllers about the deletion
+        SyncService.instance.notifyBoardDeleted(boardId!);
+
+        return true;
+      } else {
+        error.value = result['message'] ?? 'Failed to delete board';
+        return false;
+      }
+    } catch (e) {
+      error.value = e.toString();
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// Get board members
+  Future<List<Map<String, dynamic>>> getBoardMembers() async {
+    if (boardId == null || boardId!.isEmpty) return [];
+
+    try {
+      final result = await BoardService.getBoardMembers(boardId!);
+
+      if (result['success'] == true || result['status'] == 'success') {
+        final data = result['data'];
+        if (data is List) {
+          return List<Map<String, dynamic>>.from(data);
+        }
+        if (data is Map<String, dynamic>) {
+          final members = data['members'] ?? data['Users'] ?? data['users'] ?? data['data'];
+          if (members is List) {
+            return List<Map<String, dynamic>>.from(members);
+          }
+        }
+        return [];
+      } else {
+        error.value = result['message'] ?? 'Failed to load board members';
+        return [];
+      }
+    } catch (e) {
+      error.value = e.toString();
+      return [];
+    }
+  }
+
+  /// Invite member to board
+  Future<bool> inviteMemberToBoard(String email, {String role = 'MEMBER'}) async {
+    if (boardId == null || boardId!.isEmpty) return false;
+
+    try {
+      final result = await BoardService.inviteMember(boardId!, email, role: role);
+
+      if (result['success'] == true || result['status'] == 'success') {
+        return true;
+      } else {
+        error.value = result['message'] ?? 'Failed to invite member';
+        return false;
+      }
+    } catch (e) {
+      error.value = e.toString();
+      return false;
+    }
+  }
+
+  /// Update member role
+  Future<bool> updateMemberRole(String email, String role) async {
+    if (boardId == null || boardId!.isEmpty) return false;
+
+    try {
+      final result = await BoardService.updateMemberRole(boardId!, email, role);
+
+      if (result['success'] == true || result['status'] == 'success') {
+        return true;
+      } else {
+        error.value = result['message'] ?? 'Failed to update member role';
+        return false;
+      }
+    } catch (e) {
+      error.value = e.toString();
+      return false;
+    }
+  }
+
+  /// Remove member from board
+  Future<bool> removeMember(String email) async {
+    if (boardId == null || boardId!.isEmpty) return false;
+
+    try {
+      final result = await BoardService.removeMember(boardId!, email);
+
+      if (result['success'] == true || result['status'] == 'success') {
+        return true;
+      } else {
+        error.value = result['message'] ?? 'Failed to remove member';
+        return false;
+      }
+    } catch (e) {
+      error.value = e.toString();
+      return false;
+    }
   }
 
   /// Wait for authentication to be properly set up
@@ -446,6 +623,58 @@ class BoardController extends GetxController {
     await loadBoards();
   }
 
+  // Load member counts for all boards
+  Future<void> loadBoardMemberCounts() async {
+    try {
+      // Load member counts for all boards in parallel
+      final futures = allBoards.map((board) => _getBoardMemberCount(board.id));
+      final results = await Future.wait(futures);
+
+      // Update member counts cache
+      for (int i = 0; i < allBoards.length; i++) {
+        boardMemberCounts[allBoards[i].id] = results[i];
+      }
+      boardMemberCounts.refresh();
+    } catch (e) {
+      print('Error loading board member counts: $e');
+    }
+  }
+
+  // Get member count for a specific board
+  Future<int> _getBoardMemberCount(String boardId) async {
+    try {
+      final result = await BoardService.getBoardMembers(boardId);
+      if (result['success'] == true || result['status'] == 'success') {
+        final data = result['data'];
+        if (data is List) {
+          // Filter only accepted members
+          final acceptedMembers = data.where((member) =>
+            member['accepted'] == true || member['status'] == 'accepted' || member['status'] == 'active'
+          ).toList();
+          return acceptedMembers.length;
+        }
+        if (data is Map<String, dynamic>) {
+          final members = data['members'] ?? data['Users'] ?? data['users'] ?? data['data'];
+          if (members is List) {
+            final acceptedMembers = members.where((member) =>
+              member['accepted'] == true || member['status'] == 'accepted' || member['status'] == 'active'
+            ).toList();
+            return acceptedMembers.length;
+          }
+        }
+      }
+      return 1; // Default to 1 (owner)
+    } catch (e) {
+      print('Error getting member count for board $boardId: $e');
+      return 1; // Default to 1 (owner)
+    }
+  }
+
+  // Get member count for a board (from cache)
+  int getMemberCountForBoard(String boardId) {
+    return boardMemberCounts[boardId] ?? 1; // Default to 1 if not cached
+  }
+
   bool isOwnerOfBoard(String boardId) {
     // Check if board is in the owner boards list
     return ownerBoards.any((board) => board.id == boardId);
@@ -579,6 +808,153 @@ class BoardController extends GetxController {
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+    }
+  }
+
+  // Setup sync listeners
+  void _setupSyncListeners() {
+    try {
+      final syncService = SyncService.instance;
+
+      // Listen to board updates
+      ever(syncService.boardUpdatedEvent, (String event) {
+        if (event.isNotEmpty) {
+          _handleBoardUpdateEvent(event);
+        }
+      });
+
+      // Listen to home refresh needs
+      ever(syncService.homeRefreshNeeded, (bool needRefresh) {
+        if (needRefresh && Get.currentRoute.contains('/home')) {
+          // If this is home controller, refresh data
+          if (boardId == null) {
+            loadBoards();
+            syncService.resetHomeRefreshFlag();
+          }
+        }
+      });
+    } catch (e) {
+      // SyncService not ready yet
+    }
+  }
+
+  // Handle board update events
+  void _handleBoardUpdateEvent(String event) {
+    try {
+      if (event.startsWith('deleted_')) {
+        final deletedBoardId = event.split('_')[1];
+        _handleBoardDeleted(deletedBoardId);
+      } else {
+        final eventBoardId = event.split('_')[0];
+        _handleBoardUpdated(eventBoardId);
+      }
+    } catch (e) {
+      // Error parsing event
+    }
+  }
+
+  // Handle board updated from other controllers
+  void _handleBoardUpdated(String updatedBoardId) {
+    // If this is a different board controller, update shared data
+    if (boardId != updatedBoardId) {
+      // Update in allBoards list if this is home controller
+      if (boardId == null) {
+        // This is likely home controller, refresh boards
+        loadBoards();
+      }
+    } else {
+      // This is the same board, trigger UI refresh
+      update();
+    }
+  }
+
+  // Handle board deleted from other controllers
+  void _handleBoardDeleted(String deletedBoardId) {
+    // Remove from local lists
+    allBoards.removeWhere((b) => b.id == deletedBoardId);
+    ownerBoards.removeWhere((b) => b.id == deletedBoardId);
+    invitedBoards.removeWhere((b) => b.id == deletedBoardId);
+
+    // If this controller is for the deleted board, clear data
+    if (boardId == deletedBoardId) {
+      currentBoard.value = null;
+      lists.clear();
+      cardsByList.clear();
+    }
+  }
+
+  // Sync methods called by SyncService
+  void syncBoardUpdate(String updatedBoardId, Board? updatedBoard) {
+    _handleBoardUpdated(updatedBoardId);
+  }
+
+  void syncBoardDeleted(String deletedBoardId) {
+    _handleBoardDeleted(deletedBoardId);
+  }
+
+  void syncCardUpdate(String cardId, String updatedBoardId, TaskCard? updatedCard) {
+    // If this is the board controller for the updated card's board
+    if (boardId == updatedBoardId) {
+      // Refresh board data to get updated card counts
+      forceRefresh();
+    }
+  }
+
+  void syncListUpdate(String listId, String updatedBoardId, TaskList? updatedList) {
+    // If this is the board controller for the updated list's board
+    if (boardId == updatedBoardId) {
+      // Refresh board data to get updated list
+      forceRefresh();
+    }
+  }
+
+  /// Force UI update using multiple mechanisms
+  void _forceUIUpdate() {
+    // Method 1: GetBuilder update
+    update();
+
+    // Method 2: Trigger reactive update with delay
+    Future.delayed(const Duration(milliseconds: 50), () {
+      currentBoard.refresh();
+      allBoards.refresh();
+      update();
+    });
+
+    // Method 3: Force observable update
+    if (currentBoard.value != null) {
+      final temp = currentBoard.value;
+      currentBoard.value = null;
+      currentBoard.value = temp;
+    }
+  }
+
+  // Board Activities methods
+  Future<Map<String, dynamic>> getBoardActivities(String boardId, {int page = 1, int limit = 20, String? type}) async {
+    try {
+      isLoading.value = true;
+      errorMessage.value = '';
+
+      final queryParams = <String, String>{
+        'page': page.toString(),
+        // Note: Backend doesn't allow limit parameter, uses fixed PAGE_SIZE = 10
+      };
+
+      if (type != null && type.isNotEmpty) {
+        queryParams['type'] = type;
+      }
+
+      final queryString = queryParams.entries
+          .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
+          .join('&');
+
+      final endpoint = '${ApiEndpoints.boardActivities(boardId)}${queryString.isNotEmpty ? '?$queryString' : ''}';
+
+      return await ApiService.get(endpoint);
+    } catch (e) {
+      errorMessage.value = 'Connection error: ${e.toString()}';
+      return {'success': false, 'message': errorMessage.value};
+    } finally {
+      isLoading.value = false;
     }
   }
 }

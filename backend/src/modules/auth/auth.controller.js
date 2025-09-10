@@ -88,7 +88,19 @@ class AuthController {
             }
 
             const token = generateJWT(user);
-            return ResponseHandler.success(res, StatusCodes.CREATED, {...token});
+            return ResponseHandler.success(res, StatusCodes.CREATED, {
+                ...token,
+                user: {
+                    _id: user._id,
+                    email: user.email,
+                    name: user.name,
+                    isVerified: user.isVerified,
+                    verification: user.verification,
+                    isDeleted: user.isDeleted,
+                    createdAt: user.createdAt,
+                    updatedAt: user.updatedAt,
+                }
+            });
         } catch (error) {
             return ResponseHandler.error(res, StatusCodes.INTERNAL_SERVER_ERROR, error.message || 'Login failed');
         }
@@ -110,7 +122,19 @@ class AuthController {
             }
 
             const token = generateJWT(user);
-            return ResponseHandler.success(res, StatusCodes.CREATED, {...token});
+            return ResponseHandler.success(res, StatusCodes.CREATED, {
+                ...token,
+                user: {
+                    _id: user._id,
+                    email: user.email,
+                    name: user.name,
+                    isVerified: user.isVerified,
+                    verification: user.verification,
+                    isDeleted: user.isDeleted,
+                    createdAt: user.createdAt,
+                    updatedAt: user.updatedAt,
+                }
+            });
         } catch (error) {
             return ResponseHandler.error(res, StatusCodes.INTERNAL_SERVER_ERROR, error.message || 'Refresh token is invalid');
         }

@@ -351,4 +351,104 @@ class BoardService {
       );
     }
   }
+
+  // Update board info (rename, etc.)
+  static Future<Map<String, dynamic>> updateBoard(String boardId, Map<String, dynamic> data) async {
+    try {
+      final response = await ApiService.put(
+        '${ApiEndpoints.boards}/$boardId',
+        data
+      );
+
+      return response;
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Connection error: ${e.toString()}',
+      };
+    }
+  }
+
+  // Delete board
+  static Future<Map<String, dynamic>> deleteBoard(String boardId) async {
+    try {
+      final response = await ApiService.put(
+        '${ApiEndpoints.boards}/$boardId/close',
+        {}
+      );
+
+      return response;
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Connection error: ${e.toString()}',
+      };
+    }
+  }
+
+  // Get board members
+  static Future<Map<String, dynamic>> getBoardMembers(String boardId) async {
+    try {
+      final response = await ApiService.get(
+        '${ApiEndpoints.boards}/$boardId/members'
+      );
+
+      return response;
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Connection error: ${e.toString()}',
+      };
+    }
+  }
+
+  // Invite member to board
+  static Future<Map<String, dynamic>> inviteMember(String boardId, String email, {String role = 'MEMBER'}) async {
+    try {
+      final response = await ApiService.put(
+        '${ApiEndpoints.boards}/$boardId/invite-members',
+        {'email': email, 'role': role}
+      );
+
+      return response;
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Connection error: ${e.toString()}',
+      };
+    }
+  }
+
+  // Update member role
+  static Future<Map<String, dynamic>> updateMemberRole(String boardId, String email, String role) async {
+    try {
+      final response = await ApiService.put(
+        '${ApiEndpoints.boards}/$boardId/member-roles',
+        {'email': email, 'role': role}
+      );
+
+      return response;
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Connection error: ${e.toString()}',
+      };
+    }
+  }
+
+  // Remove member from board
+  static Future<Map<String, dynamic>> removeMember(String boardId, String email) async {
+    try {
+      final response = await ApiService.delete(
+        '${ApiEndpoints.boards}/$boardId/members/$email'
+      );
+
+      return response;
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Connection error: ${e.toString()}',
+      };
+    }
+  }
 }

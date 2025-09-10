@@ -9,7 +9,8 @@ class CommentsService {
     async createComment(data) {
         try {
             const comment = await CommentsModel.create(data);
-            return comment;
+            // Populate userId to return user info
+            return await CommentsModel.findById(comment._id).populate('userId', 'name email');
         } catch (error) {
             throw new Error(error.message || 'Error creating comment');
         }

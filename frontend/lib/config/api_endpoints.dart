@@ -71,4 +71,8 @@ class ApiEndpoints {
 
   // Activity endpoints
   static String boardActivities(String boardId) => '/v1/boards/$boardId/activities';
+
+  // User endpoints
+  static const String changePassword = '/v1/users/change-password';
+  static const String updateProfile = '/v1/users/my-profiles';
 }

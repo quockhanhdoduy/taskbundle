@@ -447,61 +447,80 @@ class _CardDetailViewState extends State<CardDetailView> {
   Future<void> _assignUser(String userId) async {
     if (_card == null) return;
 
-    // Check if user is already assigned
     if (_card!.assignedUsers.contains(userId)) {
       return;
     }
 
-    // Update card locally first for instant UI update
+    final originalUsers = List<String>.from(_card!.assignedUsers);
     final updatedUsers = [..._card!.assignedUsers, userId];
     _safeSetState(() {
       _card = _card?.copyWith(assignedUsers: updatedUsers);
     });
 
-    // TODO: Call API to assign user on server
-    // For now, just refresh board detail
-    await _refreshBoardDetail();
+    final ok = await _cardController.assignUser(_card!.id, userId);
+    if (ok) {
+      await _refreshBoardDetail();
+    } else {
+      // revert on failure
+      _safeSetState(() {
+        _card = _card?.copyWith(assignedUsers: originalUsers);
+      });
+    }
   }
 
   Future<void> _unassignUser(String userId) async {
     if (_card == null) return;
 
-    // Update card locally first for instant UI update
+    final originalUsers = List<String>.from(_card!.assignedUsers);
     final updatedUsers = _card!.assignedUsers.where((id) => id != userId).toList();
     _safeSetState(() {
       _card = _card?.copyWith(assignedUsers: updatedUsers);
     });
 
-    // TODO: Call API to unassign user on server
-    // For now, just refresh board detail
-    await _refreshBoardDetail();
+    final ok = await _cardController.unassignUser(_card!.id, userId);
+    if (ok) {
+      await _refreshBoardDetail();
+    } else {
+      // revert on failure
+      _safeSetState(() {
+        _card = _card?.copyWith(assignedUsers: originalUsers);
+      });
+    }
   }
 
   Future<void> _refreshBoardDetail() async {
     try {
-      // Get boardId from card data
-      final boardId = _card?.list?.boardId;
-      final listId = _card?.list?.id;
+      // Ưu tiên lấy boardId từ list embed nếu có
+      String? boardId = _card?.list?.boardId;
+      String? listId = _card?.list?.id ?? _card?.listId;
+
+      // Fallback: nếu không có list embed, dùng listId để gọi API lấy boardId
+      if ((boardId == null || boardId.isEmpty) && (listId != null && listId.isNotEmpty)) {
+        final listDetail = await _cardController.getListDetail(listId);
+        if ((listDetail['status'] == 'success' || listDetail['success'] == true) &&
+            listDetail['data'] != null) {
+          boardId = listDetail['data']['boardId'];
+        }
+      }
 
       if (boardId != null && boardId.isNotEmpty) {
         final boardControllerTag = 'board_detail_$boardId';
         if (Get.isRegistered<BoardController>(tag: boardControllerTag)) {
           final boardController = Get.find<BoardController>(tag: boardControllerTag);
 
-          // Update the specific card in cardsByList if we have current card data
-          if (_card != null && listId != null) {
+          // Cập nhật card trong bộ nhớ tạm nếu có dữ liệu hiện tại
+          if (_card != null && (listId != null && listId.isNotEmpty)) {
             final cards = boardController.cardsByList[listId];
             if (cards != null) {
               final cardIndex = cards.indexWhere((c) => c.id == _card!.id);
               if (cardIndex != -1) {
-                // Update the card with current data
                 cards[cardIndex] = _card!;
                 boardController.cardsByList.refresh();
               }
             }
           }
 
-          // Force refresh to get latest data from server
+          // Force refresh để đồng bộ dữ liệu từ server
           await boardController.forceRefresh();
         }
       }
