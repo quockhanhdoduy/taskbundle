@@ -11,7 +11,9 @@ const { listsRoutes } = require('./modules/lists/lists.routes');
 const { cardsRoutes } = require('./modules/cards/cards.routes');
 const { commentsRoutes } = require('./modules/comments/comments.routes');
 const { activitiesRoutes } = require('./modules/activities/activities.routes');
+const notificationRoutes = require('./modules/notifications');
 const { mongoDBConnect } = require('./config/database');
+const schedulerService = require('./services/scheduler.service');
 
 
 const app = express();
@@ -30,6 +32,7 @@ app.use(listsRoutes);
 app.use(cardsRoutes);
 app.use(commentsRoutes);
 app.use(activitiesRoutes);
+app.use(notificationRoutes);
 
 app.get('/', (req, res) => {
     res.status(200).json({
@@ -45,6 +48,8 @@ const startServer = async () => {
         app.listen(PORT, () => {
             console.log(`Server is running on port ${PORT}`);
             console.log('http://localhost:3000');
+
+            schedulerService.start();
         });
     } catch (error) {
         console.error('Failed to start server:', error.message);

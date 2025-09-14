@@ -419,7 +419,7 @@ class _BoardMembersViewState extends State<BoardMembersView> {
   String _toBackendRole(String role) {
     switch (role) {
       case 'Owner':
-        return 'ADMIN'; // Owner hiển thị nhưng backend dùng ADMIN cho chủ sở hữu
+        return 'ADMIN'; // Owner displays but backend uses ADMIN for owner
       case 'Admin':
         return 'ADMIN';
       case 'Viewer':

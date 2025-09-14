@@ -11,7 +11,6 @@ import 'auth_controller.dart';
 import 'card_controller.dart';
 
 class BoardController extends GetxController {
-  // Observable data
   final RxList<TaskList> lists = <TaskList>[].obs;
   final RxMap<String, List<TaskCard>> cardsByList = <String, List<TaskCard>>{}.obs;
   final RxBool isLoading = true.obs;
@@ -21,11 +20,7 @@ class BoardController extends GetxController {
   final RxList<Board> allBoards = <Board>[].obs;
   final RxList<Board> ownerBoards = <Board>[].obs;
   final RxList<Board> invitedBoards = <Board>[].obs;
-
-  // Board member counts cache
   final RxMap<String, int> boardMemberCounts = <String, int>{}.obs;
-
-  // Current board details
   final Rx<Board?> currentBoard = Rx<Board?>(null);
 
   String? boardId;
@@ -33,16 +28,12 @@ class BoardController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // Don't load data in onInit, wait for onReady
-
-    // Listen to sync events
     _setupSyncListeners();
   }
 
   @override
   void onReady() {
     super.onReady();
-    // Load data when controller is fully ready
     if (boardId != null) {
       loadBoardData();
     }
@@ -50,29 +41,22 @@ class BoardController extends GetxController {
 
   void setBoardId(String id) {
     boardId = id;
-    // Try to find board in existing data first
     _findCurrentBoard();
     loadBoardData();
   }
 
-  /// Force refresh board data - clear cache and reload everything
   Future<void> forceRefresh() async {
     if (boardId == null) return;
 
-    // Clear existing data
     lists.clear();
     cardsByList.clear();
     currentBoard.value = null;
     error.value = '';
 
-    // Wait for authentication to be ready
     await _waitForAuthentication();
-
-    // Reload data
     await loadBoardData();
   }
 
-  /// Update board name
   Future<bool> updateBoardName(String newName) async {
     if (boardId == null || boardId!.isEmpty) return false;
 
@@ -83,25 +67,18 @@ class BoardController extends GetxController {
       final result = await BoardService.updateBoard(boardId!, {'name': newName});
 
       if (result['success'] == true || result['status'] == 'success') {
-        // Update local state
         if (currentBoard.value != null) {
           currentBoard.value = currentBoard.value!.copyWith(name: newName);
-          // Force reactive update
           currentBoard.refresh();
         }
 
-        // Update board in lists
         final boardIndex = allBoards.indexWhere((b) => b.id == boardId);
         if (boardIndex != -1) {
           allBoards[boardIndex] = allBoards[boardIndex].copyWith(name: newName);
           allBoards.refresh();
         }
 
-        // Force multiple update mechanisms
         _forceUIUpdate();
-        print('BoardController: Updated board name to $newName, calling _forceUIUpdate()');
-
-        // Notify other controllers about the change
         SyncService.instance.notifyBoardUpdated(boardId!, updatedBoard: currentBoard.value);
 
         return true;
@@ -117,7 +94,6 @@ class BoardController extends GetxController {
     }
   }
 
-  /// Delete board
   Future<bool> deleteBoard() async {
     if (boardId == null || boardId!.isEmpty) return false;
 
@@ -128,17 +104,14 @@ class BoardController extends GetxController {
       final result = await BoardService.deleteBoard(boardId!);
 
       if (result['success'] == true || result['status'] == 'success') {
-        // Remove from local lists
         allBoards.removeWhere((b) => b.id == boardId);
         ownerBoards.removeWhere((b) => b.id == boardId);
         invitedBoards.removeWhere((b) => b.id == boardId);
 
-        // Clear current board data
         currentBoard.value = null;
         lists.clear();
         cardsByList.clear();
 
-        // Notify other controllers about the deletion
         SyncService.instance.notifyBoardDeleted(boardId!);
 
         return true;
@@ -154,7 +127,6 @@ class BoardController extends GetxController {
     }
   }
 
-  /// Get board members
   Future<List<Map<String, dynamic>>> getBoardMembers() async {
     if (boardId == null || boardId!.isEmpty) return [];
 
@@ -183,7 +155,6 @@ class BoardController extends GetxController {
     }
   }
 
-  /// Invite member to board
   Future<bool> inviteMemberToBoard(String email, {String role = 'MEMBER'}) async {
     if (boardId == null || boardId!.isEmpty) return false;
 
@@ -202,7 +173,6 @@ class BoardController extends GetxController {
     }
   }
 
-  /// Update member role
   Future<bool> updateMemberRole(String email, String role) async {
     if (boardId == null || boardId!.isEmpty) return false;
 
@@ -221,7 +191,6 @@ class BoardController extends GetxController {
     }
   }
 
-  /// Remove member from board
   Future<bool> removeMember(String email) async {
     if (boardId == null || boardId!.isEmpty) return false;
 
@@ -240,13 +209,10 @@ class BoardController extends GetxController {
     }
   }
 
-  /// Wait for authentication to be properly set up
   Future<void> _waitForAuthentication() async {
-    // Try to get AuthController
     try {
       final authController = Get.find<AuthController>();
 
-      // Wait up to 3 seconds for authentication to be ready
       for (int i = 0; i < 30; i++) {
         if (authController.isAuthenticated.value) {
           return;
@@ -254,26 +220,22 @@ class BoardController extends GetxController {
         await Future.delayed(const Duration(milliseconds: 100));
       }
     } catch (e) {
-      // Fallback to simple delay
       await Future.delayed(const Duration(milliseconds: 500));
     }
   }
 
   void _findCurrentBoard() {
     if (boardId != null) {
-      // Try to find in allBoards first
       final board = allBoards.firstWhereOrNull((b) => b.id == boardId);
       if (board != null) {
         currentBoard.value = board;
       } else {
-        // Try to find in ownerBoards + invitedBoards
         final allBoardsList = [...ownerBoards, ...invitedBoards];
         final foundBoard = allBoardsList.firstWhereOrNull((b) => b.id == boardId);
         if (foundBoard != null) {
           currentBoard.value = foundBoard;
         } else {
           currentBoard.value = null;
-          // If not found, try to load boards first
           _loadBoardsIfEmpty();
         }
       }
@@ -283,7 +245,6 @@ class BoardController extends GetxController {
   Future<void> _loadBoardsIfEmpty() async {
     if (allBoards.isEmpty && ownerBoards.isEmpty && invitedBoards.isEmpty) {
       await loadBoards();
-      // Try to find board again after loading
       if (boardId != null) {
         final allBoardsList = [...ownerBoards, ...invitedBoards];
         final foundBoard = allBoardsList.firstWhereOrNull((b) => b.id == boardId);
@@ -301,13 +262,11 @@ class BoardController extends GetxController {
     error.value = '';
 
     try {
-      // Load lists for the board
       final listsResponse = await BoardService.getListsByBoard(boardId!);
 
       if (listsResponse.success && listsResponse.data != null) {
         lists.value = listsResponse.data!;
 
-        // Load cards for each list
         Map<String, List<TaskCard>> tempCardsByList = {};
         for (TaskList list in lists) {
           try {
@@ -321,14 +280,12 @@ class BoardController extends GetxController {
             tempCardsByList[list.id] = [];
           }
         }
-        // Update cardsByList properly to maintain reactivity
         cardsByList.clear();
         for (var entry in tempCardsByList.entries) {
           cardsByList[entry.key] = entry.value;
         }
         cardsByList.refresh();
 
-        // Update cache with loaded data
         if (boardId != null && boardId!.isNotEmpty) {
           _updateBoardCountsCache(boardId!, 'lists', lists.length);
           int totalCards = 0;
@@ -358,7 +315,7 @@ class BoardController extends GetxController {
       if (response.success && response.data != null) {
         lists.add(response.data!);
         cardsByList[response.data!.id] = [];
-        _notifyHomeController(); // Update home view
+        _notifyHomeController();
 
         Get.snackbar(
           'Success',
@@ -393,8 +350,8 @@ class BoardController extends GetxController {
           cardsByList[listId] = [];
         }
         cardsByList[listId]!.add(response.data!);
-        cardsByList.refresh(); // Notify observers
-        _notifyHomeController(); // Update home view
+        cardsByList.refresh();
+        _notifyHomeController();
 
         Get.snackbar(
           'Success',
@@ -420,60 +377,39 @@ class BoardController extends GetxController {
     }
   }
 
-  // Drag and Drop Logic
   void reorderLists(int fromIndex, int toIndex) {
     if (fromIndex == toIndex || fromIndex >= lists.length || toIndex < 0) {
-      // Invalid reorder parameters
       return;
     }
 
-    // Clamp toIndex to valid range
     toIndex = toIndex.clamp(0, lists.length - 1);
-
-    // Reordering lists với logic thông minh theo hướng kéo
     final TaskList item = lists.removeAt(fromIndex);
-
-    int finalIndex;
-
-    if (fromIndex < toIndex) {
-      // Kéo từ trái sang phải → chèn vào sau target (bên phải)
-      finalIndex = toIndex; // Sau khi removeAt, toIndex đã tự động adjust
-    } else {
-      // Kéo từ phải sang trái → chèn vào trước target (bên trái)
-      finalIndex = toIndex;
-    }
-
+    int finalIndex = toIndex;
     lists.insert(finalIndex, item);
 
-    // Force UI update multiple ways để đảm bảo
     lists.refresh();
-    update(); // Trigger GetBuilder updates if any
+    update();
 
-    // Delay để đảm bảo UI đã update
     Future.delayed(const Duration(milliseconds: 50), () {
       lists.refresh();
     });
 
-    // TODO: Call API to update list positions on server
     _updateListPositions();
   }
 
   void moveCardToList(TaskCard card, String fromListId, int fromIndex, String toListId) {
-    // Remove card from source list
     if (cardsByList[fromListId] != null) {
       cardsByList[fromListId]!.removeAt(fromIndex);
     }
 
-    // Add card to target list
     if (cardsByList[toListId] == null) {
       cardsByList[toListId] = [];
     }
     cardsByList[toListId]!.add(card);
 
-    cardsByList.refresh(); // Notify observers
-    _notifyHomeController(); // Update home view
+    cardsByList.refresh();
+    _notifyHomeController();
 
-    // TODO: Call API to move card to different list
     _moveCardToListOnServer(card.id, toListId);
   }
 
@@ -483,38 +419,30 @@ class BoardController extends GetxController {
       return;
     }
 
-    // Adjust toIndex if it's beyond the list
     if (toIndex > cards.length) {
       toIndex = cards.length;
     }
 
-    // Remove card from original position
     final TaskCard item = cards.removeAt(fromIndex);
-
-    // Adjust target index after removal
     int insertIndex = toIndex;
     if (toIndex > fromIndex) {
       insertIndex = toIndex - 1;
     }
 
-    // Insert at new position
     cards.insert(insertIndex, item);
 
-    cardsByList.refresh(); // Notify observers
-    _notifyHomeController(); // Update home view
+    cardsByList.refresh();
+    _notifyHomeController();
 
-    // TODO: Call API to update card positions
     _updateCardPositions(listId);
   }
 
   void moveCardToListAtPosition(TaskCard card, String fromListId, int fromIndex, String toListId, int toIndex) {
-    // Remove card from source list
     final fromCards = cardsByList[fromListId];
     if (fromCards != null && fromIndex < fromCards.length) {
       fromCards.removeAt(fromIndex);
     }
 
-    // Add card to target list at specific position
     if (cardsByList[toListId] == null) {
       cardsByList[toListId] = [];
     }
@@ -527,13 +455,11 @@ class BoardController extends GetxController {
 
     toCards.insert(insertIndex, card);
 
-    cardsByList.refresh(); // Notify observers
+    cardsByList.refresh();
 
-    // TODO: Call API to move card to different list at position
     _moveCardToListOnServer(card.id, toListId);
   }
 
-  // Private API methods (placeholder implementations)
   Future<void> _updateListPositions() async {
     // TODO: Implement API call to update list positions
   }
@@ -546,7 +472,6 @@ class BoardController extends GetxController {
     // TODO: Implement API call to move card to different list
   }
 
-  // Board creation methods
   Future<bool> createBoard(String name) async {
     isLoading.value = true;
     errorMessage.value = '';
@@ -557,7 +482,6 @@ class BoardController extends GetxController {
 
       if (response.success && response.data != null) {
         successMessage.value = 'Board "$name" created successfully!';
-        // Don't call loadBoards() here - let the calling view handle refresh
         return true;
       } else {
         errorMessage.value = response.message;
@@ -577,7 +501,6 @@ class BoardController extends GetxController {
     error.value = '';
   }
 
-  // Board list management methods
   Future<void> loadBoards() async {
     isLoading.value = true;
     errorMessage.value = '';
@@ -589,18 +512,12 @@ class BoardController extends GetxController {
         final boardsData = response.data!;
         ownerBoards.value = boardsData['ownerBoards'] ?? [];
         invitedBoards.value = boardsData['invitedBoards'] ?? [];
-
-        // Combine all boards for the main list
         allBoards.value = [...ownerBoards, ...invitedBoards];
 
-        // Loaded boards successfully
-
-        // Initialize cache with default counts for all boards
         for (final board in allBoards) {
           if (!boardCountsCache.containsKey(board.id)) {
             _updateBoardCountsCache(board.id, 'lists', 0);
             _updateBoardCountsCache(board.id, 'cards', 0);
-            // Initialized cache for board
           }
         }
       } else {
@@ -623,14 +540,11 @@ class BoardController extends GetxController {
     await loadBoards();
   }
 
-  // Load member counts for all boards
   Future<void> loadBoardMemberCounts() async {
     try {
-      // Load member counts for all boards in parallel
       final futures = allBoards.map((board) => _getBoardMemberCount(board.id));
       final results = await Future.wait(futures);
 
-      // Update member counts cache
       for (int i = 0; i < allBoards.length; i++) {
         boardMemberCounts[allBoards[i].id] = results[i];
       }
@@ -640,14 +554,12 @@ class BoardController extends GetxController {
     }
   }
 
-  // Get member count for a specific board
   Future<int> _getBoardMemberCount(String boardId) async {
     try {
       final result = await BoardService.getBoardMembers(boardId);
       if (result['success'] == true || result['status'] == 'success') {
         final data = result['data'];
         if (data is List) {
-          // Filter only accepted members
           final acceptedMembers = data.where((member) =>
             member['accepted'] == true || member['status'] == 'accepted' || member['status'] == 'active'
           ).toList();
@@ -663,34 +575,29 @@ class BoardController extends GetxController {
           }
         }
       }
-      return 1; // Default to 1 (owner)
+      return 1;
     } catch (e) {
       print('Error getting member count for board $boardId: $e');
-      return 1; // Default to 1 (owner)
+      return 1;
     }
   }
 
-  // Get member count for a board (from cache)
   int getMemberCountForBoard(String boardId) {
-    return boardMemberCounts[boardId] ?? 1; // Default to 1 if not cached
+    return boardMemberCounts[boardId] ?? 1;
   }
 
   bool isOwnerOfBoard(String boardId) {
-    // Check if board is in the owner boards list
     return ownerBoards.any((board) => board.id == boardId);
   }
 
-  // Static cache for board counts
   static final Map<String, Map<String, int>> boardCountsCache = {};
 
-  // Get counts for a specific board
   int getListCountForBoard(String boardId) {
     if (boardId == this.boardId) {
       final count = lists.length;
       _updateBoardCountsCache(boardId, 'lists', count);
       return count;
     }
-    // Return cached value or 0
     return boardCountsCache[boardId]?['lists'] ?? 0;
   }
 
@@ -703,24 +610,19 @@ class BoardController extends GetxController {
       _updateBoardCountsCache(boardId, 'cards', totalCards);
       return totalCards;
     }
-    // Return cached value or 0
     return boardCountsCache[boardId]?['cards'] ?? 0;
   }
 
-  // Update cache when data changes
   static void _updateBoardCountsCache(String boardId, String type, int count) {
     if (boardCountsCache[boardId] == null) {
       boardCountsCache[boardId] = {};
     }
     boardCountsCache[boardId]![type] = count;
-    // Updated cache for board
   }
 
-  // Update home controller when counts change
   void _notifyHomeController() {
     try {
       final homeController = Get.find<BoardController>(tag: 'home');
-      // Trigger refresh in home view
       homeController.allBoards.refresh();
       homeController.ownerBoards.refresh();
       homeController.invitedBoards.refresh();
@@ -729,25 +631,19 @@ class BoardController extends GetxController {
     }
   }
 
-  // Load real counts for all boards from API (optimized for HomeView)
-  // DISABLED: No longer needed since we don't display counts
   Future<void> loadBoardCounts() async {
-    // No longer needed - counts are not displayed
     return;
   }
 
-  // Toggle card completion status
   Future<void> toggleCardCompletion(String cardId, bool isCompleted) async {
     try {
       print('BoardController.toggleCardCompletion called: $cardId -> $isCompleted');
 
-      // Create a new CardController instance for this operation
       final cardController = CardController();
       final success = await cardController.toggleCompletion(cardId, isCompleted);
       print('API call success: $success');
 
       if (success) {
-        // Update the card in cardsByList
         bool updated = false;
         print('Searching for card $cardId in cardsByList...');
         print('cardsByList keys: ${cardsByList.keys.toList()}');
@@ -756,7 +652,6 @@ class BoardController extends GetxController {
           final cards = cardsByList[listId]!;
           print('Checking list $listId with ${cards.length} cards');
 
-          // Print all card IDs in this list
           final cardIds = cards.map((card) => card.id).toList();
           print('Card IDs in list $listId: $cardIds');
 
@@ -777,9 +672,8 @@ class BoardController extends GetxController {
         if (updated) {
           print('Calling cardsByList.refresh() and update()');
           cardsByList.refresh();
-          update(); // Force controller update
+          update();
 
-          // Also trigger a slight delay to ensure UI updates
           Future.delayed(const Duration(milliseconds: 100), () {
             print('Delayed refresh and update');
             cardsByList.refresh();
@@ -792,8 +686,8 @@ class BoardController extends GetxController {
         }
       } else {
         Get.snackbar(
-          'Lỗi',
-          'Không thể cập nhật trạng thái thẻ',
+          'Error',
+          'Failed to update card status',
           snackPosition: SnackPosition.TOP,
           backgroundColor: Colors.red,
           colorText: Colors.white,
@@ -802,8 +696,8 @@ class BoardController extends GetxController {
     } catch (e) {
       print('Error toggling card completion: $e');
       Get.snackbar(
-        'Lỗi',
-        'Không thể cập nhật trạng thái thẻ: ${e.toString()}',
+        'Error',
+        'Failed to update card status: ${e.toString()}',
         snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.red,
         colorText: Colors.white,
@@ -811,22 +705,18 @@ class BoardController extends GetxController {
     }
   }
 
-  // Setup sync listeners
   void _setupSyncListeners() {
     try {
       final syncService = SyncService.instance;
 
-      // Listen to board updates
       ever(syncService.boardUpdatedEvent, (String event) {
         if (event.isNotEmpty) {
           _handleBoardUpdateEvent(event);
         }
       });
 
-      // Listen to home refresh needs
       ever(syncService.homeRefreshNeeded, (bool needRefresh) {
         if (needRefresh && Get.currentRoute.contains('/home')) {
-          // If this is home controller, refresh data
           if (boardId == null) {
             loadBoards();
             syncService.resetHomeRefreshFlag();
@@ -838,7 +728,6 @@ class BoardController extends GetxController {
     }
   }
 
-  // Handle board update events
   void _handleBoardUpdateEvent(String event) {
     try {
       if (event.startsWith('deleted_')) {
@@ -853,29 +742,21 @@ class BoardController extends GetxController {
     }
   }
 
-  // Handle board updated from other controllers
   void _handleBoardUpdated(String updatedBoardId) {
-    // If this is a different board controller, update shared data
     if (boardId != updatedBoardId) {
-      // Update in allBoards list if this is home controller
       if (boardId == null) {
-        // This is likely home controller, refresh boards
         loadBoards();
       }
     } else {
-      // This is the same board, trigger UI refresh
       update();
     }
   }
 
-  // Handle board deleted from other controllers
   void _handleBoardDeleted(String deletedBoardId) {
-    // Remove from local lists
     allBoards.removeWhere((b) => b.id == deletedBoardId);
     ownerBoards.removeWhere((b) => b.id == deletedBoardId);
     invitedBoards.removeWhere((b) => b.id == deletedBoardId);
 
-    // If this controller is for the deleted board, clear data
     if (boardId == deletedBoardId) {
       currentBoard.value = null;
       lists.clear();
@@ -883,7 +764,6 @@ class BoardController extends GetxController {
     }
   }
 
-  // Sync methods called by SyncService
   void syncBoardUpdate(String updatedBoardId, Board? updatedBoard) {
     _handleBoardUpdated(updatedBoardId);
   }
@@ -893,34 +773,26 @@ class BoardController extends GetxController {
   }
 
   void syncCardUpdate(String cardId, String updatedBoardId, TaskCard? updatedCard) {
-    // If this is the board controller for the updated card's board
     if (boardId == updatedBoardId) {
-      // Refresh board data to get updated card counts
       forceRefresh();
     }
   }
 
   void syncListUpdate(String listId, String updatedBoardId, TaskList? updatedList) {
-    // If this is the board controller for the updated list's board
     if (boardId == updatedBoardId) {
-      // Refresh board data to get updated list
       forceRefresh();
     }
   }
 
-  /// Force UI update using multiple mechanisms
   void _forceUIUpdate() {
-    // Method 1: GetBuilder update
     update();
 
-    // Method 2: Trigger reactive update with delay
     Future.delayed(const Duration(milliseconds: 50), () {
       currentBoard.refresh();
       allBoards.refresh();
       update();
     });
 
-    // Method 3: Force observable update
     if (currentBoard.value != null) {
       final temp = currentBoard.value;
       currentBoard.value = null;
@@ -928,7 +800,6 @@ class BoardController extends GetxController {
     }
   }
 
-  // Board Activities methods
   Future<Map<String, dynamic>> getBoardActivities(String boardId, {int page = 1, int limit = 20, String? type}) async {
     try {
       isLoading.value = true;
@@ -936,7 +807,6 @@ class BoardController extends GetxController {
 
       final queryParams = <String, String>{
         'page': page.toString(),
-        // Note: Backend doesn't allow limit parameter, uses fixed PAGE_SIZE = 10
       };
 
       if (type != null && type.isNotEmpty) {

@@ -9,6 +9,7 @@ import '../views/home_view.dart';
 import '../views/boards/create_board_view.dart';
 import '../views/boards/board_detail_view.dart';
 import '../views/cards/card_detail_view.dart';
+import '../views/notifications/notification_view.dart';
 import '../middlewares/auth_middleware.dart';
 
 class AppRoutes {
@@ -22,6 +23,7 @@ class AppRoutes {
   static const String createBoard = '/create-board';
   static const String boardDetail = '/board/:boardId';
   static const String cardDetail = '/card/:cardId';
+  static const String notifications = '/notifications';
 
   // Initial route
   static const String initial = login;
@@ -113,6 +115,15 @@ class AppRoutes {
       transitionDuration: const Duration(milliseconds: 300),
       middlewares: [AuthMiddleware()],
     ),
+
+    // Notification route
+    GetPage(
+      name: notifications,
+      page: () => const NotificationView(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 300),
+      middlewares: [AuthMiddleware()],
+    ),
   ];
 
   // Helper methods for navigation
@@ -132,6 +143,9 @@ class AppRoutes {
 
   // Card navigation
   static void toCardDetail(String cardId) => Get.toNamed('/card/$cardId');
+
+  // Notification navigation
+  static void toNotifications() => Get.toNamed(notifications);
 
   // Card as bottom sheet
   static void showCardDetailBottomSheet(String cardId) {

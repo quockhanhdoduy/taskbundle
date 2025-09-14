@@ -9,7 +9,7 @@ import '../../../controllers/card_controller.dart';
 
 class CardAttachmentsWidget extends StatefulWidget {
   final TaskCard card;
-  final Function(String, String) onAddAttachment; // filename, url (callback giữ cho backwards)
+  final Function(String, String) onAddAttachment; // filename, url (callback kept for backwards compatibility)
 
   const CardAttachmentsWidget({
     super.key,

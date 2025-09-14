@@ -7,7 +7,7 @@ class ActivityController extends GetxController {
   var activities = <Map<String, dynamic>>[].obs;
   var errorMessage = ''.obs;
 
-  // Lấy lịch sử hoạt động của board
+  // Get board activity history
   Future<void> getBoardActivities(String boardId) async {
     try {
       isLoading.value = true;
@@ -29,7 +29,7 @@ class ActivityController extends GetxController {
     }
   }
 
-  // Refresh lịch sử hoạt động
+  // Refresh activity history
   Future<void> refreshActivities(String boardId) async {
     await getBoardActivities(boardId);
   }

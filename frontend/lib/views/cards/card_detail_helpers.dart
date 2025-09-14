@@ -31,10 +31,10 @@ class CardDetailHelpers {
         final card = TaskCard.fromJson(result['data']);
         setCard(card);
       } else {
-        // API trả về lỗi hoặc không có data
+        // API returns error or no data
         final message = result['message'] ?? 'Card not found or API error';
 
-        // Tạo mock card data để test UI khi API fail
+        // Create mock card data to test UI when API fails
         // Ensure cardId is valid ObjectId format
         var validCardId = cardId;
         if (cardId.contains(':') || cardId.isEmpty) {
@@ -56,7 +56,7 @@ class CardDetailHelpers {
         );
 
         setCard(mockCard);
-        // Vẫn set error để user biết đây là mock data
+        // Still set error so user knows this is mock data
         setError('Using mock data - API error: $message');
       }
     } catch (e) {

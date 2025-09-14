@@ -39,7 +39,7 @@ class ListController extends GetxController {
 
       if (result['status'] == 'success' || result['success'] == true) {
         Get.snackbar('Success', 'Create list successfully');
-        await getListsByBoard(boardId); // Refresh danh sách
+        await getListsByBoard(boardId);
         return true;
       } else {
         errorMessage.value = result['message'] ?? 'Tạo list thất bại';
@@ -65,7 +65,7 @@ class ListController extends GetxController {
 
       if (result['status'] == 'success' || result['success'] == true) {
         Get.snackbar('Success', 'Update list successfully');
-        await getListsByBoard(boardId); // Refresh danh sách
+        await getListsByBoard(boardId);
         return true;
       } else {
         errorMessage.value = result['message'] ?? 'Cập nhật list thất bại';
@@ -89,7 +89,7 @@ class ListController extends GetxController {
 
       if (result['status'] == 'success' || result['success'] == true) {
         Get.snackbar('Success', 'Delete list successfully');
-        await getListsByBoard(boardId); // Refresh danh sách
+        await getListsByBoard(boardId);
         return true;
       } else {
         errorMessage.value = result['message'] ?? 'Xóa list thất bại';
@@ -115,7 +115,7 @@ class ListController extends GetxController {
 
       if (result['status'] == 'success' || result['success'] == true) {
         Get.snackbar('Success', 'Move list successfully');
-        await getListsByBoard(boardId); // Refresh danh sách
+        await getListsByBoard(boardId);
         return true;
       } else {
         errorMessage.value = result['message'] ?? 'Di chuyển list thất bại';

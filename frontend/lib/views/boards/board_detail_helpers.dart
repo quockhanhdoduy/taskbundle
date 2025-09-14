@@ -21,7 +21,7 @@ class BoardDetailHelpers {
       return;
     }
 
-    // Kiểm tra xem scrollController có được attach không
+    // Check if scrollController is attached
     if (!scrollController.hasClients) {
       _stopAutoScroll(setIsAutoScrolling, setCurrentScrollSpeed);
       return;
@@ -39,12 +39,12 @@ class BoardDetailHelpers {
 
     double scrollSpeed = 0.0;
 
-    // Kiểm tra xem có đang trong vùng edge không
+    // Check if currently in edge zone
     final isInLeftEdge = event.position.dx < scrollZone && scrollPosition > 0;
     final isInRightEdge = event.position.dx > screenWidth - scrollZone && scrollPosition < maxScrollExtent;
     final isInScrollZone = isInLeftEdge || isInRightEdge;
 
-    // Tính toán scroll speed chỉ khi trong vùng edge
+    // Calculate scroll speed only when in edge zone
     if (isInLeftEdge) {
       final distanceFromEdge = scrollZone - event.position.dx;
       scrollSpeed = -(distanceFromEdge / scrollZone) * maxScrollSpeed;
@@ -53,29 +53,29 @@ class BoardDetailHelpers {
       scrollSpeed = (distanceFromEdge / scrollZone) * maxScrollSpeed;
     }
 
-    // Dừng scroll ngay lập tức nếu không còn trong vùng edge
+    // Stop scrolling immediately if no longer in edge zone
     if (!isInScrollZone || !isDragging) {
       _stopAutoScroll(setIsAutoScrolling, setCurrentScrollSpeed);
       return;
     }
 
-    // Apply scrolling chỉ khi trong vùng edge và đang drag
+    // Apply scrolling only when in edge zone and dragging
     if (scrollSpeed.abs() > 0.1 && isDragging && isInScrollZone) {
       if (!isAutoScrolling) {
         setIsAutoScrolling(true);
-        // Bắt đầu timer-based auto scroll
+        // Start timer-based auto scroll
         _startAutoScroll(scrollController, setIsAutoScrolling, setCurrentScrollSpeed);
       }
       setCurrentScrollSpeed(scrollSpeed);
 
       final newPosition = (scrollPosition + scrollSpeed).clamp(0.0, maxScrollExtent);
 
-      // Scroll với kiểm tra position change
+      // Scroll with position change check
       if (scrollController.hasClients && (newPosition - scrollPosition).abs() > 0.3) {
         scrollController.jumpTo(newPosition);
       }
     } else {
-      // Ngừng auto-scroll ngay lập tức khi không còn trong vùng edge
+      // Stop auto-scroll immediately when no longer in edge zone
       _stopAutoScroll(setIsAutoScrolling, setCurrentScrollSpeed);
     }
   }
@@ -99,12 +99,12 @@ class BoardDetailHelpers {
       final scrollPosition = scrollController.position.pixels;
       final maxScrollExtent = scrollController.position.maxScrollExtent;
 
-      // Kiểm tra vị trí pointer hiện tại
+      // Check current pointer position
       final isInLeftEdge = _lastPointerX < scrollZone && scrollPosition > 0;
       final isInRightEdge = _lastPointerX > screenWidth - scrollZone && scrollPosition < maxScrollExtent;
 
       if (!isInLeftEdge && !isInRightEdge) {
-        // Dừng ngay khi ra khỏi vùng edge
+        // Stop immediately when leaving edge zone
         _stopAutoScroll(setIsAutoScrolling, setCurrentScrollSpeed);
         return;
       }

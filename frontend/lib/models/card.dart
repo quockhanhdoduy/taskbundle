@@ -39,10 +39,10 @@ class TaskCard {
   });
 
   factory TaskCard.fromJson(Map<String, dynamic> json) {
-    // Parse card ID với fallback cho invalid IDs
+    // Parse card ID with fallback for invalid IDs
     var cardId = json['_id'] ?? json['id'] ?? '';
 
-    // Fix invalid IDs (chỉ khi thực sự cần)
+    // Fix invalid IDs (only when really needed)
     if (cardId.contains(':') || cardId.isEmpty) {
       // Generate a unique ObjectId-like string based on title hash
       final title = json['title'] ?? 'untitled';

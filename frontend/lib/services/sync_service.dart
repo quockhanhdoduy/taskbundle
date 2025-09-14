@@ -3,11 +3,11 @@ import '../models/board.dart';
 import '../models/card.dart';
 import '../models/list.dart';
 
-/// Service để đồng bộ dữ liệu giữa các controller
+/// Service to sync data between controllers
 class SyncService extends GetxService {
   static SyncService get instance => Get.find<SyncService>();
 
-  // Events để thông báo thay đổi dữ liệu
+  // Events to notify data changes
   final RxString _boardUpdatedEvent = ''.obs;
   final RxString _cardUpdatedEvent = ''.obs;
   final RxString _listUpdatedEvent = ''.obs;
@@ -19,35 +19,35 @@ class SyncService extends GetxService {
   RxString get listUpdatedEvent => _listUpdatedEvent;
   RxBool get homeRefreshNeeded => _homeRefreshNeeded;
 
-  /// Thông báo board đã được cập nhật
+  /// Notify that board has been updated
   void notifyBoardUpdated(String boardId, {Board? updatedBoard}) {
     _boardUpdatedEvent.value = '${boardId}_${DateTime.now().millisecondsSinceEpoch}';
     _homeRefreshNeeded.value = true;
 
-    // Gửi event để các controller khác lắng nghe
+    // Send event for other controllers to listen
     Get.find<SyncService>()._broadcastBoardUpdate(boardId, updatedBoard);
   }
 
-  /// Thông báo board đã bị xóa
+  /// Notify that board has been deleted
   void notifyBoardDeleted(String boardId) {
     _boardUpdatedEvent.value = 'deleted_${boardId}_${DateTime.now().millisecondsSinceEpoch}';
     _homeRefreshNeeded.value = true;
 
-    // Gửi event để các controller khác lắng nghe
+    // Send event for other controllers to listen
     Get.find<SyncService>()._broadcastBoardDeleted(boardId);
   }
 
-  /// Thông báo card đã được cập nhật
+  /// Notify that card has been updated
   void notifyCardUpdated(String cardId, String boardId, {TaskCard? updatedCard}) {
     _cardUpdatedEvent.value = '${cardId}_${DateTime.now().millisecondsSinceEpoch}';
 
-    // Cũng cần cập nhật board counts
+    // Also need to update board counts
     _homeRefreshNeeded.value = true;
 
     Get.find<SyncService>()._broadcastCardUpdate(cardId, boardId, updatedCard);
   }
 
-  /// Thông báo list đã được cập nhật
+  /// Notify that list has been updated
   void notifyListUpdated(String listId, String boardId, {TaskList? updatedList}) {
     _listUpdatedEvent.value = '${listId}_${DateTime.now().millisecondsSinceEpoch}';
     _homeRefreshNeeded.value = true;
@@ -60,7 +60,7 @@ class SyncService extends GetxService {
     _homeRefreshNeeded.value = false;
   }
 
-  // Private methods để broadcast events
+  // Private methods to broadcast events
   void _broadcastBoardUpdate(String boardId, Board? updatedBoard) {
     // Simple approach: just trigger events, let listeners handle the rest
     print('SyncService: Broadcasting board update for $boardId');

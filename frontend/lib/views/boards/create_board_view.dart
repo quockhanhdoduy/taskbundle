@@ -158,7 +158,7 @@ class _CreateBoardViewState extends State<CreateBoardView> {
     if (!mounted) return;
 
     if (success) {
-      // Refresh home controller trước khi quay về
+      // Refresh home controller before going back
       await _refreshHomeController();
 
       Get.back();

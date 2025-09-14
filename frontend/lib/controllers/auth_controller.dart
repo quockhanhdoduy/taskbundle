@@ -13,13 +13,11 @@ class AuthController extends GetxController {
   var isAuthenticated = false.obs;
   var currentUser = Rx<User?>(null);
 
-  // Clear all messages
   void clearMessages() {
     errorMessage.value = '';
     successMessage.value = '';
   }
 
-  // Force clear messages (for navigation)
   void forceCleanState() {
     clearMessages();
     isLoading.value = false;
@@ -31,7 +29,6 @@ class AuthController extends GetxController {
     _checkToken();
   }
 
-  // Check if response indicates success
   bool _isSuccess(Map<String, dynamic> result) {
     try {
       var success = result['success'];
@@ -47,17 +44,14 @@ class AuthController extends GetxController {
     }
   }
 
-  // Get error message from response
   String _getErrorMessage(Map<String, dynamic> result, [String defaultMessage = 'Operation failed']) {
     try {
-      // First check if it's an error status response (backend format)
       var status = result['status'];
       if (status is String && status.toLowerCase() == 'error') {
         var message = result['message'];
         if (message is String && message.isNotEmpty) {
           return message;
         }
-        // Handle case where message is an object with data array (validation errors)
         if (message is Map<String, dynamic> && message['data'] is List) {
           List<String> errors = List<String>.from(message['data']);
           if (errors.any((error) => error.contains('Invalid password, cannot login!'))) {
@@ -67,24 +61,20 @@ class AuthController extends GetxController {
         }
       }
 
-      // Check for message field directly
       var message = result['message'];
       if (message is String && message.isNotEmpty && message.toLowerCase() != 'success') {
-        // Special handling for password validation error
         if (message.contains('Invalid password, cannot login!')) {
           return 'Invalid password';
         }
         return message;
       }
 
-      // Check for error field (could contain detailed errors)
       var error = result['error'];
       if (error is Map<String, dynamic>) {
         var errorMessage = error['message'];
         if (errorMessage is String && errorMessage.isNotEmpty) {
           return errorMessage;
         }
-        // Check if error contains data array
         var errorData = error['data'];
         if (errorData is List && errorData.isNotEmpty) {
           List<String> errors = List<String>.from(errorData);
@@ -95,11 +85,8 @@ class AuthController extends GetxController {
         }
       }
 
-      // Check data field for nested message or error array
       var data = result['data'];
       if (data is List && data.isNotEmpty) {
-        // Handle validation error arrays from backend
-        // Special handling for password validation error during login
         List<String> errors = List<String>.from(data);
         if (errors.any((error) => error.contains('Invalid password, cannot login!'))) {
           return 'Invalid password';
@@ -124,7 +111,6 @@ class AuthController extends GetxController {
       ApiService.setToken(token);
       isAuthenticated.value = true;
 
-      // Load user data from storage
       final userData = await _storageService.getUserData();
       if (userData != null) {
         currentUser.value = User.fromJson(userData);
@@ -149,7 +135,6 @@ class AuthController extends GetxController {
 
 
       if (_isSuccess(result)) {
-        // Save tokens
         String token = result['data']['token'] ?? result['data']['accessToken'];
         await _storageService.saveToken(token);
         if (result['data']['refreshToken'] != null) {
@@ -157,7 +142,6 @@ class AuthController extends GetxController {
         }
         ApiService.setToken(token);
 
-        // Save user data if available
         if (result['data']['user'] != null) {
           await _storageService.saveUserData(result['data']['user']);
           currentUser.value = User.fromJson(result['data']['user']);
@@ -212,7 +196,6 @@ class AuthController extends GetxController {
       errorMessage.value = '';
       successMessage.value = '';
 
-      // Validate OTP format before parsing
       if (otp.length != 6 || !RegExp(r'^[0-9]+$').hasMatch(otp)) {
         errorMessage.value = 'Verification code must be 6 digits';
         return false;
@@ -238,19 +221,16 @@ class AuthController extends GetxController {
     }
   }
 
-  // Gửi lại verification code cho register bằng cách gọi lại register endpoint
   Future<bool> resendVerificationCode(String email) async {
     try {
       isLoading.value = true;
       errorMessage.value = '';
       successMessage.value = '';
 
-      // Gọi register endpoint để gửi lại verification code
-      // Backend sẽ kiểm tra email đã tồn tại và chỉ gửi lại email
       final result = await ApiService.post(ApiEndpoints.authRegister, {
         'email': email,
-        'password': 'Temp123!@#', // Password mạnh tạm thời, backend sẽ bỏ qua nếu email đã tồn tại
-        'name': 'Resend User', // Name tạm thời
+        'password': 'Temp123!@#',
+        'name': 'Resend User',
       });
 
       if (_isSuccess(result)) {
@@ -272,7 +252,6 @@ class AuthController extends GetxController {
     await _storageService.clearAll();
     ApiService.clearToken();
 
-    // Clear all states
     isAuthenticated.value = false;
     currentUser.value = null;
     clearMessages();
@@ -280,7 +259,6 @@ class AuthController extends GetxController {
     Get.offAllNamed('/login');
   }
 
-  // Verify forgot password OTP
   Future<bool> verifyForgotPassword(String email, String otp) async {
     try {
       isLoading.value = true;
@@ -312,7 +290,6 @@ class AuthController extends GetxController {
     }
   }
 
-  // Forgot password
   Future<bool> forgotPassword(String email) async {
     try {
       isLoading.value = true;
@@ -338,13 +315,11 @@ class AuthController extends GetxController {
     }
   }
 
-  // Reset password with OTP
   Future<bool> resetPasswordWithOTP(String email, String otp, String newPassword) async {
     try {
       isLoading.value = true;
       errorMessage.value = '';
 
-      // Sử dụng endpoint reset password mới - verify OTP + đổi password trong 1 lần
       final result = await ApiService.post(ApiEndpoints.userResetPassword, {
         'email': email,
         'code': int.parse(otp),
@@ -353,7 +328,6 @@ class AuthController extends GetxController {
 
       if (_isSuccess(result)) {
         successMessage.value = 'Password changed successfully';
-        // Chuyển về trang login sau khi đổi mật khẩu thành công
         Future.delayed(const Duration(seconds: 1), () {
           Get.offAllNamed('/login');
         });
@@ -370,7 +344,6 @@ class AuthController extends GetxController {
     }
   }
 
-  // Refresh token
   Future<bool> refreshToken() async {
     try {
       isLoading.value = true;
@@ -387,7 +360,6 @@ class AuthController extends GetxController {
       });
 
       if (result['status'] == 'success' || result['success'] == true) {
-        // Save new tokens
         await _storageService.saveToken(result['data']['accessToken']);
         if (result['data']['refreshToken'] != null) {
           await _storageService.saveRefreshToken(result['data']['refreshToken']);

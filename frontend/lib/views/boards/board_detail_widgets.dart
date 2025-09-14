@@ -76,7 +76,7 @@ class BoardDetailWidgets {
     Widget listColumn,
   ) {
     return Container(
-      width: 296, // 280 + 16 margin để giữ nguyên spacing tổng thể
+      width: 296, // 280 + 16 margin to maintain overall spacing
       child: DragTarget<int>(
         onWillAcceptWithDetails: (details) {
           return details.data != index;
@@ -90,8 +90,8 @@ class BoardDetailWidgets {
           decoration: candidateData.isNotEmpty
               ? BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.blue, width: 3), // Tăng border để dễ thấy
-                    color: Colors.blue.withValues(alpha: 0.1), // Thêm background color
+                    border: Border.all(color: Colors.blue, width: 3), // Increase border for visibility
+                    color: Colors.blue.withValues(alpha: 0.1), // Add background color
                 )
               : null,
             child: Container(
@@ -687,7 +687,7 @@ class BoardDetailWidgets {
       ),
     );
 
-    // InkWell không cần thiết vì đã có GestureDetector ở level cao hơn
+    // InkWell not needed as GestureDetector is at higher level
     return content;
   }
 

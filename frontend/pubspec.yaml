@@ -40,6 +40,10 @@ dependencies:
   file_picker: ^8.0.5
   permission_handler: ^11.3.1
   url_launcher: ^6.3.0
+  firebase_core: ^4.1.0
+  firebase_messaging: ^16.0.1
+  flutter_local_notifications: ^19.4.2
+  clipboard: ^2.0.2
 
 dev_dependencies:
   flutter_test:

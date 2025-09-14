@@ -1,6 +1,7 @@
 const { ResponseHandler, StatusCodes } = require("../../utils");
 const { CardsService } = require("./cards.service");
 const { FileUploadService } = require("../../services/file-upload.service");
+const boardNotificationService = require('../../services/board-notification.service');
 
 class CardsController {
     async createCard(req, res) {
@@ -10,6 +11,23 @@ class CardsController {
         try {
             const card = await CardsService.createCard(data);
             console.log(`User ${user.email} created new card: ${card.title} in list ${data.listId}`);
+
+            try {
+                const { card: cardInfo, board } = await notificationHelper.getCardAndBoardInfo(card._id);
+                await boardNotificationService.sendCardNotification(
+                    {
+                        ...cardInfo,
+                        author: {
+                            _id: user._id,
+                            name: user.name || user.email
+                        }
+                    },
+                    board,
+                    user._id
+                );
+            } catch (notificationError) {
+                console.error('Error sending card notification:', notificationError);
+            }
 
             return ResponseHandler.success(res, StatusCodes.CREATED, card);
         } catch (error) {
@@ -31,7 +49,6 @@ class CardsController {
     async getCard(req, res) {
         const { cardId } = req.params;
 
-        // Debug logging
         console.log('DEBUG - getCard - cardId:', cardId);
         console.log('DEBUG - getCard - req.params:', req.params);
         console.log('DEBUG - getCard - req.url:', req.url);
@@ -254,10 +271,8 @@ class CardsController {
         try {
             const existingCard = await CardsService.findOneCard({ _id: cardId });
             if (!existingCard) {
-                // If card doesn't exist, delete uploaded file
                 if (attachmentData && attachmentData.url) {
                     try {
-                        // Extract publicId from url if needed for cleanup
                         const urlParts = attachmentData.url.split('/');
                         const publicIdWithExt = urlParts[urlParts.length - 1];
                         const publicId = publicIdWithExt.split('.')[0];
@@ -283,10 +298,8 @@ class CardsController {
                 attachment: attachment
             });
         } catch (error) {
-            // If error occurs, try to cleanup uploaded file from Cloudinary
             if (attachmentData && attachmentData.url) {
                 try {
-                    // Extract publicId from url if needed for cleanup
                     const urlParts = attachmentData.url.split('/');
                     const publicIdWithExt = urlParts[urlParts.length - 1];
                     const publicId = publicIdWithExt.split('.')[0];
@@ -311,7 +324,6 @@ class CardsController {
                 return ResponseHandler.error(res, StatusCodes.NOT_FOUND, 'Card not found');
             }
 
-            // Find attachment to get url before deletion
             const attachment = existingCard.attachments.find(
                 att => att._id.toString() === attachmentId
             );
@@ -320,7 +332,6 @@ class CardsController {
                 return ResponseHandler.error(res, StatusCodes.NOT_FOUND, 'Attachment not found');
             }
 
-            // Remove attachment from database
             const updatedCard = await CardsService.removeAttachmentFromCard(cardId, attachmentId);
 
             console.log(`User ${user.email} removed attachment from card: ${updatedCard.title}`);

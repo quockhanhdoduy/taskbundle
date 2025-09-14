@@ -156,7 +156,7 @@ class _LoginViewState extends State<LoginView> {
                       ),
                     ),
 
-                    // Flexible space - co giãn theo bàn phím
+                    // Flexible space - expands with keyboard
                     SizedBox(height: keyboardHeight > 0 ? 12 : 16),
 
                                           // Message display (fixed height to prevent jumping)

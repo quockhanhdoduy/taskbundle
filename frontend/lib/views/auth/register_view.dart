@@ -151,7 +151,7 @@ class _RegisterViewState extends State<RegisterView> {
                       validator: Validators.password,
                     ),
 
-                    // Flexible space - co giãn theo bàn phím
+                    // Flexible space - expands with keyboard
                     SizedBox(height: keyboardHeight > 0 ? 12 : 16),
                       Container(
                         height: 40, // fixed height

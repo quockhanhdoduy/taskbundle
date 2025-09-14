@@ -46,5 +46,10 @@ router.get(
     UsersController.viewUserGeneralInfo
 );
 
+router.post(
+    '/v1/users/fcm-token',
+    AuthMiddleware.verifyToken,
+    UsersController.saveFCMToken
+);
 
 module.exports = { usersRoutes: router };

@@ -7,7 +7,7 @@ class CommentController extends GetxController {
   var comments = <Map<String, dynamic>>[].obs;
   var errorMessage = ''.obs;
 
-  // Lấy comments của card
+  // Get card comments
   Future<void> getCardComments(String cardId) async {
     try {
       isLoading.value = true;
@@ -29,7 +29,7 @@ class CommentController extends GetxController {
     }
   }
 
-  // Tạo comment mới
+  // Create new comment
   Future<bool> createComment(String cardId, String content) async {
     try {
       isLoading.value = true;
@@ -41,7 +41,7 @@ class CommentController extends GetxController {
 
       if (result['status'] == 'success' || result['success'] == true) {
         Get.snackbar('Success', 'Create comment successfully');
-        await getCardComments(cardId); // Refresh danh sách
+        await getCardComments(cardId);
         return true;
       } else {
         errorMessage.value = result['message'] ?? 'Tạo comment thất bại';
@@ -57,7 +57,7 @@ class CommentController extends GetxController {
     }
   }
 
-  // Lấy chi tiết comment
+  // Get comment details
   Future<Map<String, dynamic>> getCommentDetail(String commentId) async {
     try {
       isLoading.value = true;
@@ -73,7 +73,7 @@ class CommentController extends GetxController {
     }
   }
 
-  // Cập nhật comment
+  // Update comment
   Future<bool> updateComment(String commentId, String content, String cardId) async {
     try {
       isLoading.value = true;
@@ -84,7 +84,7 @@ class CommentController extends GetxController {
 
       if (result['status'] == 'success' || result['success'] == true) {
         Get.snackbar('Success', 'Update comment successfully');
-        await getCardComments(cardId); // Refresh danh sách
+        await getCardComments(cardId);
         return true;
       } else {
         errorMessage.value = result['message'] ?? 'Cập nhật comment thất bại';
@@ -100,7 +100,7 @@ class CommentController extends GetxController {
     }
   }
 
-  // Xóa comment
+  // Delete comment
   Future<bool> deleteComment(String commentId, String cardId) async {
     try {
       isLoading.value = true;
@@ -109,7 +109,7 @@ class CommentController extends GetxController {
 
       if (result['status'] == 'success' || result['success'] == true) {
         Get.snackbar('Success', 'Delete comment successfully');
-        await getCardComments(cardId); // Refresh danh sách
+        await getCardComments(cardId);
         return true;
       } else {
         errorMessage.value = result['message'] ?? 'Xóa comment thất bại';

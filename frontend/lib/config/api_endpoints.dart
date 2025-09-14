@@ -3,13 +3,13 @@ import 'dart:io' show Platform;
 
 class ApiEndpoints {
   // Base configuration
-  // Tự động chọn baseUrl theo nền tảng chạy ứng dụng
+  // Automatically select baseUrl based on platform
   static String get baseUrl {
     if (kIsWeb) return 'http://localhost:3000';
     try {
       if (Platform.isAndroid) return 'http://10.0.2.2:3000';
     } catch (_) {
-      // Platform không khả dụng (ví dụ trong test), fallback localhost
+      // Platform not available (e.g., in test), fallback localhost
     }
     return 'http://localhost:3000';
   }

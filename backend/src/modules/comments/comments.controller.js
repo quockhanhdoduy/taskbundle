@@ -1,5 +1,6 @@
 const { ResponseHandler, StatusCodes } = require("../../utils");
 const { CommentsService } = require("./comments.service");
+const boardNotificationService = require('../../services/board-notification.service');
 
 class CommentsController {
     /**
@@ -17,6 +18,24 @@ class CommentsController {
 
             const comment = await CommentsService.createComment(commentData);
             console.log(`User ${user.email} created new comment on card ${data.cardId}`);
+
+            try {
+                const { card, board } = await notificationHelper.getCardAndBoardInfo(data.cardId);
+                await boardNotificationService.sendCommentNotification(
+                    {
+                        _id: comment._id,
+                        author: {
+                            _id: user._id,
+                            name: user.name || user.email
+                        }
+                    },
+                    card,
+                    board,
+                    user._id
+                );
+            } catch (notificationError) {
+                console.error('Error sending comment notification:', notificationError);
+            }
 
             return ResponseHandler.success(res, StatusCodes.CREATED, comment);
         } catch (error) {

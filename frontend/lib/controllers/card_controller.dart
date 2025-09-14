@@ -8,7 +8,6 @@ class CardController extends GetxController {
   var cards = <Map<String, dynamic>>[].obs;
   var errorMessage = ''.obs;
 
-  // Lấy cards theo list
   Future<void> getCardsByList(String listId) async {
     try {
       isLoading.value = true;
@@ -30,7 +29,6 @@ class CardController extends GetxController {
     }
   }
 
-  // Tạo card mới
   Future<bool> createCard(String listId, String title, String? description) async {
     try {
       isLoading.value = true;
@@ -49,7 +47,7 @@ class CardController extends GetxController {
           colorText: Colors.white,
           snackPosition: SnackPosition.TOP,
         );
-        await getCardsByList(listId); // Refresh danh sách
+        await getCardsByList(listId);
         return true;
       } else {
         errorMessage.value = result['message'] ?? 'Create card failed';
@@ -65,7 +63,6 @@ class CardController extends GetxController {
     }
   }
 
-  // Cập nhật card
   Future<bool> updateCard(String cardId, String? title, String? description) async {
     try {
       isLoading.value = true;
@@ -95,7 +92,6 @@ class CardController extends GetxController {
     }
   }
 
-  // Xóa card
   Future<bool> deleteCard(String cardId) async {
     try {
       isLoading.value = true;
@@ -119,7 +115,6 @@ class CardController extends GetxController {
     }
   }
 
-  // Upload attachment
   Future<bool> uploadAttachment(String cardId, String filePath) async {
     try {
       isLoading.value = true;
@@ -143,7 +138,6 @@ class CardController extends GetxController {
     }
   }
 
-  // Lấy chi tiết card
   Future<Map<String, dynamic>> getCardDetail(String cardId) async {
     try {
       isLoading.value = true;
@@ -161,7 +155,6 @@ class CardController extends GetxController {
     }
   }
 
-  // Di chuyển vị trí card
   Future<bool> updateCardPosition(String cardId, int newPosition) async {
     try {
       isLoading.value = true;
@@ -187,7 +180,6 @@ class CardController extends GetxController {
     }
   }
 
-  // Chuyển card sang list khác
   Future<bool> moveCardToList(String cardId, String targetListId, int? newPosition) async {
     try {
       isLoading.value = true;
@@ -214,7 +206,6 @@ class CardController extends GetxController {
     }
   }
 
-  // Assign user vào card
   Future<bool> assignUser(String cardId, String userId) async {
     try {
       isLoading.value = true;
@@ -240,7 +231,6 @@ class CardController extends GetxController {
     }
   }
 
-  // Unassign user khỏi card
   Future<bool> unassignUser(String cardId, String userId) async {
     try {
       isLoading.value = true;
@@ -266,7 +256,6 @@ class CardController extends GetxController {
     }
   }
 
-  // Lấy danh sách members của card
   Future<Map<String, dynamic>> getCardMembers(String cardId) async {
     try {
       isLoading.value = true;
@@ -282,7 +271,6 @@ class CardController extends GetxController {
     }
   }
 
-  // Assign nhiều user cùng lúc
   Future<bool> assignMultipleUsers(String cardId, List<String> userIds) async {
     try {
       isLoading.value = true;
@@ -308,7 +296,6 @@ class CardController extends GetxController {
     }
   }
 
-  // Set/Update due date
   Future<bool> updateDueDate(String cardId, String? dueDate) async {
     try {
       isLoading.value = true;
@@ -333,30 +320,21 @@ class CardController extends GetxController {
     }
   }
 
-  // Đánh dấu hoàn thành
   Future<bool> toggleCompletion(String cardId, bool isCompleted) async {
     try {
       isLoading.value = true;
-
-      // Toggle completion API call
 
       final result = await ApiService.put(ApiEndpoints.cardCompletion(cardId), {
         'isCompleted': isCompleted,
       });
 
-      // API response received
-
       if (result['status'] == 'success' || result['success'] == true) {
-        // Toggle completion successful
-        // Don't show snackbar here, let the UI handle it
         return true;
       } else {
-        // Toggle completion failed
         errorMessage.value = result['message'] ?? 'Update status failed';
         return false;
       }
     } catch (e) {
-      // Toggle completion error
       errorMessage.value = 'Connection error: ${e.toString()}';
       return false;
     } finally {
@@ -364,7 +342,6 @@ class CardController extends GetxController {
     }
   }
 
-  // Lấy danh sách attachments
   Future<Map<String, dynamic>> getCardAttachments(String cardId) async {
     try {
       isLoading.value = true;
@@ -380,7 +357,6 @@ class CardController extends GetxController {
     }
   }
 
-  // Xóa attachment
   Future<bool> removeAttachment(String cardId, String attachmentId) async {
     try {
       isLoading.value = true;
@@ -404,7 +380,6 @@ class CardController extends GetxController {
     }
   }
 
-  // Lấy thông tin list detail để lấy boardId
   Future<Map<String, dynamic>> getListDetail(String listId) async {
     try {
       isLoading.value = true;

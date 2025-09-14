@@ -7,7 +7,6 @@ class UserController extends GetxController {
   var userProfileData = <String, dynamic>{}.obs;
   var errorMessage = ''.obs;
 
-  // Get user profile from server
   Future<Map<String, dynamic>?> loadUserProfile() async {
     try {
       isLoading.value = true;
@@ -16,7 +15,6 @@ class UserController extends GetxController {
       final result = await ApiService.get(ApiEndpoints.userProfile);
 
       if (result['success'] == true || result['status'] == 'success') {
-        // Update local data
         final data = Map<String, dynamic>.from(result['data'] ?? {});
         userProfileData.value = data;
         return data;
@@ -32,7 +30,6 @@ class UserController extends GetxController {
     }
   }
 
-  // Update user profile
   Future<Map<String, dynamic>?> updateUserProfile(Map<String, dynamic> data) async {
     try {
       errorMessage.value = '';
@@ -40,15 +37,12 @@ class UserController extends GetxController {
       final result = await ApiService.put(ApiEndpoints.updateProfile, data);
 
       if (result['success'] == true || result['status'] == 'success') {
-        // Update local data
         final updatedData = Map<String, dynamic>.from(result['data'] ?? {});
         userProfileData.value = updatedData;
         return updatedData;
       } else {
-        // Handle different error cases
         String errorMsg = result['message'] ?? 'Failed to update profile';
 
-        // Special handling for specific error messages
         if (errorMsg.contains('name') && errorMsg.contains('invalid')) {
           errorMsg = 'Invalid name format';
         } else if (errorMsg.contains('length')) {
@@ -64,7 +58,6 @@ class UserController extends GetxController {
     }
   }
 
-  // Change password
   Future<bool> changePassword(String currentPassword, String newPassword) async {
     try {
       errorMessage.value = '';
@@ -74,14 +67,11 @@ class UserController extends GetxController {
         'new_password': newPassword,
       });
 
-      // Check if request was successful
       if (result['success'] == true || result['status'] == 'success') {
         return true;
       } else {
-        // Handle different error cases
         String errorMsg = result['message'] ?? 'Failed to change password';
 
-        // Special handling for specific error messages
         if (errorMsg.contains('Old password is incorrect') ||
             errorMsg.contains('incorrect') ||
             result['statusCode'] == 406) {
@@ -101,14 +91,11 @@ class UserController extends GetxController {
     }
   }
 
-  // Upload avatar
   Future<bool> uploadAvatar(String imagePath) async {
     try {
       isLoading.value = true;
       errorMessage.value = '';
 
-      // TODO: Implement file upload
-      // This would typically use a multipart request
       Get.snackbar('Info', 'Avatar upload feature coming soon!');
       return false;
     } catch (e) {
@@ -120,10 +107,8 @@ class UserController extends GetxController {
     }
   }
 
-  // Get user statistics (placeholder - no API endpoint available)
   Future<Map<String, dynamic>> getUserStats() async {
     try {
-      // No API endpoint available, return empty stats
       return {};
     } catch (e) {
       return {};

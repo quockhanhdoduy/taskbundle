@@ -35,6 +35,11 @@ const usersSchema = new mongoose.Schema({
             default: moment().add(15, 'minute').unix(),
         },
     },
+    fcmToken: {
+        type: String,
+        default: null,
+        description: 'Firebase Cloud Messaging token for push notifications'
+    },
     deletedAt: {
         type: Date,
         default: null,

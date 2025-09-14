@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../config/routes.dart';
 import '../controllers/board_controller.dart';
 import '../controllers/auth_controller.dart';
+import '../controllers/notification_controller.dart';
 import '../services/sync_service.dart';
 import 'profile/profile_view.dart';
 
@@ -22,24 +23,17 @@ class _HomeViewState extends State<HomeView> {
   @override
   void initState() {
     super.initState();
-    // Initialize controller with unique tag for home view
     boardController = Get.put(BoardController(), tag: 'home');
-    // Load boards when home view is initialized
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // Loading boards
       await boardController.loadBoards();
 
-      // Loading board counts
       setState(() {
         _isLoadingCounts = true;
       });
 
       await boardController.loadBoardCounts();
-
-      // Load member counts
       await boardController.loadBoardMemberCounts();
 
-      // Completed loading
       setState(() {
         _isLoadingCounts = false;
       });
@@ -49,7 +43,6 @@ class _HomeViewState extends State<HomeView> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Refresh board data when returning to home view
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkForSyncUpdates();
       setState(() {
@@ -58,7 +51,6 @@ class _HomeViewState extends State<HomeView> {
     });
   }
 
-  // Check if we need to refresh due to sync updates
   void _checkForSyncUpdates() {
     try {
       final syncService = SyncService.instance;
@@ -71,7 +63,6 @@ class _HomeViewState extends State<HomeView> {
     }
   }
 
-  // Handle menu actions
   void _handleMenuAction(String action) {
     switch (action) {
       case 'profile':
@@ -83,18 +74,14 @@ class _HomeViewState extends State<HomeView> {
     }
   }
 
-  // Show profile view
   void _showProfile() {
     Get.to(() => const ProfileView())?.then((_) {
-      // Force refresh when returning from profile
-      // This ensures the profile view gets fresh data
       setState(() {
         // Trigger a rebuild to refresh any cached data
       });
     });
   }
 
-  // Show logout confirmation dialog
   void _showLogoutDialog() {
     Get.dialog(
       AlertDialog(
@@ -136,14 +123,11 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  // Perform logout
   void _logout() async {
     try {
-      // Get AuthController and logout
       final authController = Get.find<AuthController>();
       await authController.logout();
 
-      // Navigate to login screen
       Get.offAllNamed('/login');
     } catch (e) {
       Get.snackbar(
@@ -182,9 +166,8 @@ class _HomeViewState extends State<HomeView> {
         iconTheme: const IconThemeData(
           color: Colors.white,
         ),
-        automaticallyImplyLeading: false, // Remove back button
+        automaticallyImplyLeading: false,
         actions: [
-          // Loading indicator for counts
           if (_isLoadingCounts)
             Container(
               margin: const EdgeInsets.only(right: 8),
@@ -200,9 +183,43 @@ class _HomeViewState extends State<HomeView> {
               ),
             ),
           IconButton(
-            icon: const Icon(Icons.notifications),
+            icon: Stack(
+              children: [
+                const Icon(Icons.notifications),
+                Obx(() {
+                  final unreadCount = Get.find<NotificationController>().unreadCount;
+                  if (unreadCount > 0) {
+                    return Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          unreadCount > 99 ? '99+' : unreadCount.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                }),
+              ],
+            ),
             onPressed: () {
-              // TODO: Notifications
+              AppRoutes.toNotifications();
             },
           ),
           PopupMenuButton<String>(
@@ -239,7 +256,6 @@ class _HomeViewState extends State<HomeView> {
           crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
           children: [
-                // Search section
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.grey[100],
@@ -279,8 +295,6 @@ class _HomeViewState extends State<HomeView> {
               ),
             ),
             const SizedBox(height: 24),
-
-                // Boards section
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -298,13 +312,11 @@ class _HomeViewState extends State<HomeView> {
               ],
             ),
             const SizedBox(height: 16),
-
-                // Boards list (vertical)
                 Container(
                   height: MediaQuery.of(context).size.height -
                           MediaQuery.of(context).padding.top -
                           kToolbarHeight -
-                          200, // Approximate space for search + header + padding
+                          200,
                   child: Obx(() {
                     if (boardController.isLoading.value) {
                       return const Center(
@@ -341,7 +353,6 @@ class _HomeViewState extends State<HomeView> {
                       );
                     }
 
-                    // Apply search filter
                     final allBoards = boardController.allBoards;
                     final filteredBoards = searchQuery.value.isEmpty
                         ? allBoards
@@ -381,7 +392,6 @@ class _HomeViewState extends State<HomeView> {
                   );
                 }
 
-                // Show "no results" if search returns empty
                 if (searchQuery.value.isNotEmpty && filteredBoards.isEmpty) {
                   return Center(
                     child: Column(
@@ -424,7 +434,6 @@ class _HomeViewState extends State<HomeView> {
                     itemBuilder: (context, index) {
                       final board = filteredBoards[index];
                       final isOwner = boardController.isOwnerOfBoard(board.id);
-                      // Use original index for color consistency
                       final originalIndex = allBoards.indexOf(board);
 
                       return Padding(
@@ -473,13 +482,11 @@ class _HomeViewState extends State<HomeView> {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                // Left side - Board info
                 Expanded(
                   flex: 3,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Board name
                 Text(
                   board['name'],
                   style: const TextStyle(
@@ -493,8 +500,6 @@ class _HomeViewState extends State<HomeView> {
                 const SizedBox(height: 8),
 
                 const Spacer(),
-
-                      // Board stats with owner star
                 Row(
                   children: [
                     Icon(
@@ -523,8 +528,6 @@ class _HomeViewState extends State<HomeView> {
                     ],
                   ),
                 ),
-
-                // Right side - Arrow icon
                 Expanded(
                   flex: 1,
                   child: Column(
@@ -547,7 +550,6 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  // Get board color based on index
   Color _getBoardColor(int index) {
     final colors = [
       Colors.blue.shade600,

@@ -4,6 +4,7 @@ const { UsersService } = require('./users.service');
 const { hashPassword, comparePassword } = require('../../utils/password.util');
 const { ResponseHandler, StatusCodes } = require('../../utils/response-handler.util');
 const { sendVerificationEmail } = require('../email/email.service');
+const notificationHelper = require('../../services/notification-helper.service');
 
 class UsersController {
     async viewMyProfile(req, res) {
@@ -82,11 +83,9 @@ class UsersController {
                 return ResponseHandler.error(res, StatusCodes.NOT_FOUND, "User not found");
             }
 
-            // Tạo mã mới và cập nhật TTL
             const newCode = Math.floor(100000 + Math.random() * 900000);
             const newTtl = moment().add(15, 'minute').unix();
 
-            // Cập nhật mã mới vào database
             await UsersService.updateOne(
                 user._id,
                 {
@@ -94,8 +93,6 @@ class UsersController {
                     'verification.ttl': newTtl
                 }
             );
-
-            // Gửi OTP email với mã mới (không block nếu lỗi email)
             try {
                 await sendVerificationEmail(user, newCode);
             } catch (e) {
@@ -141,7 +138,6 @@ class UsersController {
 
             const hashedPassword = await hashPassword(data.newPassword);
 
-            // Tìm user bằng email để lấy _id
             const user = await UsersService.findOne({ email: data.email });
             if (!user) {
                 return ResponseHandler.error(res, StatusCodes.NOT_FOUND, "User not found");
@@ -162,6 +158,22 @@ class UsersController {
             }
         } catch (error) {
             return ResponseHandler.error(res, StatusCodes.BAD_REQUEST, error.message);
+        }
+    }
+
+    async saveFCMToken(req, res) {
+        const user = req.user;
+        const { fcmToken } = req.body;
+
+        if (!fcmToken) {
+            return ResponseHandler.error(res, StatusCodes.BAD_REQUEST, 'FCM token is required');
+        }
+
+        try {
+            await notificationHelper.saveUserToken(user._id, fcmToken);
+            return ResponseHandler.success(res, StatusCodes.OK, 'FCM token saved successfully');
+        } catch (error) {
+            return ResponseHandler.error(res, StatusCodes.INTERNAL_SERVER_ERROR, error.message);
         }
     }
 }

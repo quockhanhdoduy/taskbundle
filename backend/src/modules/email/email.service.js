@@ -2,7 +2,6 @@ const nodemailer = require('nodemailer');
 const { getVerificationMailTemplate, getOTPMailTemplate, inviteUserToBoardTemplate } = require('./email.templates');
 const { env } = require('../../utils');
 
-// Tạo transporter với Gmail SMTP
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {

@@ -28,7 +28,7 @@ class _BoardDetailViewState extends State<BoardDetailView> {
   bool _isDragging = false;
   bool _isAutoScrolling = false;
   bool _controllerInitialized = false;
-  String? _titleOverride; // Tên board tạm thời để hiển thị ngay lập tức
+  String? _titleOverride; // Temporary board name for immediate display
 
   @override
   void initState() {
@@ -42,14 +42,14 @@ class _BoardDetailViewState extends State<BoardDetailView> {
   }
 
   void _setupTitleOverrideListener() {
-    // Lắng nghe thay đổi từ controller để clear override khi cần
+    // Listen for controller changes to clear override when needed
     if (Get.isRegistered<BoardController>(tag: 'board_detail_${widget.boardId}')) {
       final controller = Get.find<BoardController>(tag: 'board_detail_${widget.boardId}');
 
       // Listen to currentBoard changes
       ever(controller.currentBoard, (Board? board) {
         if (_titleOverride != null && board?.name == _titleOverride) {
-          // Controller đã cập nhật đúng tên, có thể clear override
+          // Controller has updated with correct name, can clear override
           Future.delayed(const Duration(milliseconds: 100), () {
             if (mounted && _titleOverride == board?.name) {
               setState(() {
@@ -173,7 +173,7 @@ class _BoardDetailViewState extends State<BoardDetailView> {
   }
 
   void _renameBoardAction(BoardController controller, String newName) async {
-    // Cập nhật UI ngay lập tức
+    // Update UI immediately
     setState(() {
       _titleOverride = newName;
     });
@@ -182,7 +182,7 @@ class _BoardDetailViewState extends State<BoardDetailView> {
     Get.back();
 
     if (!success) {
-      // Chỉ rollback khi API thất bại
+      // Only rollback when API fails
       setState(() {
         _titleOverride = null;
       });
@@ -197,8 +197,8 @@ class _BoardDetailViewState extends State<BoardDetailView> {
         );
       }
     }
-    // Nếu API thành công, giữ _titleOverride để đảm bảo UI không bị flicker
-    // Controller sẽ tự cập nhật trong background
+    // If API succeeds, keep _titleOverride to ensure UI doesn't flicker
+    // Controller will update automatically in background
   }
 
   void _showBoardMembersDialog(BoardController controller) {
@@ -420,7 +420,7 @@ class _BoardDetailViewState extends State<BoardDetailView> {
   }
 
   void _handlePointerMove(PointerMoveEvent event) {
-    // Giảm tần suất gọi handlePointerMove để giảm giật
+    // Reduce frequency of handlePointerMove calls to reduce jitter
     if (!_isDragging) return;
 
     BoardDetailHelpers.handlePointerMove(
@@ -431,7 +431,7 @@ class _BoardDetailViewState extends State<BoardDetailView> {
       (value) {
         if (_isAutoScrolling != value) {
           _isAutoScrolling = value;
-          // Chỉ setState khi giá trị thực sự thay đổi và widget còn mounted
+          // Only setState when value actually changes and widget is mounted
           if (mounted) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) setState(() {});
@@ -439,7 +439,7 @@ class _BoardDetailViewState extends State<BoardDetailView> {
           }
         }
       },
-      (value) {}, // Không cần setState cho scroll speed
+      (value) {}, // No need for setState for scroll speed
     );
   }
 
@@ -471,8 +471,8 @@ class _BoardDetailViewState extends State<BoardDetailView> {
       () {
         if (_isDragging) {
           _isDragging = false;
-          _isAutoScrolling = false; // Reset auto scroll khi kết thúc drag
-          BoardDetailHelpers.handleDragEnd(); // Dừng timer
+          _isAutoScrolling = false;
+          BoardDetailHelpers.handleDragEnd();
           if (mounted) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) setState(() {});
@@ -505,8 +505,8 @@ class _BoardDetailViewState extends State<BoardDetailView> {
       () {
         if (_isDragging) {
           _isDragging = false;
-          _isAutoScrolling = false; // Reset auto scroll khi kết thúc drag
-          BoardDetailHelpers.handleDragEnd(); // Dừng timer
+          _isAutoScrolling = false;
+          BoardDetailHelpers.handleDragEnd();
           if (mounted) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) setState(() {});

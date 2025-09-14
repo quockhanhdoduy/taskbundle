@@ -253,7 +253,7 @@ class _VerifyOTPViewState extends State<VerifyOTPView> {
 
   void _handleVerifyOTP() async {
     if (_formKey.currentState!.validate()) {
-      // Verify OTP with backend first - sử dụng method khác nhau tùy theo source
+      // Verify OTP with backend first - use different method depending on source
       bool success;
       if (widget.source == 'forgot_password') {
         success = await _authController.verifyForgotPassword(
@@ -268,16 +268,16 @@ class _VerifyOTPViewState extends State<VerifyOTPView> {
       }
 
       if (success) {
-        // Sau khi verify thành công, điều hướng dựa trên source
+        // After successful verification, navigate based on source
         Future.delayed(const Duration(seconds: 1), () {
           if (widget.source == 'forgot_password') {
-            // Từ forgot password → qua đổi mật khẩu
+            // From forgot password → go to change password
             Get.toNamed('/change-password', arguments: {
               'email': widget.email,
               'otp': _otpController.text.trim(),
             });
           } else {
-            // Từ register → quay về login
+            // From register → return to login
             AppRoutes.toLogin();
           }
         });
@@ -287,10 +287,10 @@ class _VerifyOTPViewState extends State<VerifyOTPView> {
 
   void _resendCode() {
     if (widget.source == 'forgot_password') {
-      // Gửi lại OTP cho forgot password
+      // Resend OTP for forgot password
       _authController.forgotPassword(widget.email);
     } else {
-      // Gửi lại verification code cho register bằng cách gọi lại register
+      // Resend verification code for register by calling register again
       _authController.resendVerificationCode(widget.email);
     }
   }

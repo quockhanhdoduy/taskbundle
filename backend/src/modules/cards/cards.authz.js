@@ -96,7 +96,6 @@ class CardsAuthz {
                 return ListsAuthz.verifyListMemberAccess(req, res, next);
             }
 
-            // Nếu được assign vào card, cho phép truy cập
             next();
         } catch (error) {
             return ResponseHandler.error(

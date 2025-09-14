@@ -10,13 +10,10 @@ class AuthController {
         const existEmail = await UsersService.findOne({email: data.email});
 
         if (existEmail) {
-            // Nếu email đã tồn tại, tạo mã mới và gửi lại verification code
             try {
-                // Tạo mã mới và cập nhật TTL
                 const newCode = Math.floor(100000 + Math.random() * 900000);
                 const newTtl = moment().add(15, 'minute').unix();
 
-                // Cập nhật mã mới vào database
                 await UsersService.updateOne(
                     existEmail._id,
                     {
@@ -25,7 +22,6 @@ class AuthController {
                     }
                 );
 
-                // Gửi email với mã mới
                 await sendVerificationEmail(existEmail, newCode);
                 return ResponseHandler.success(res, StatusCodes.OK, "Verification code sent successfully", {
                     success: true,
@@ -45,7 +41,6 @@ class AuthController {
             data.password = hashed;
 
             const user = await UsersService.create(data);
-            // Try to send verification email but do not block registration
             try {
                 await sendVerificationEmail(user, user.verification.code);
             } catch (e) {

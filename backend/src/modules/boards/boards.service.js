@@ -291,7 +291,6 @@ class BoardsService {
       }).populate({ path: 'userId', select: '_id email name is_verified' });
       const result = usersBoards.map((uB) => {
         const user = JSON.parse(JSON.stringify(uB.userId));
-        // Trả về role và accepted để client có thể hiển thị/kiểm thử nếu cần
         return { ...user, role: uB.role, accepted: uB.accepted };
       });
       return result;

@@ -490,11 +490,11 @@ class _CardDetailViewState extends State<CardDetailView> {
 
   Future<void> _refreshBoardDetail() async {
     try {
-      // Ưu tiên lấy boardId từ list embed nếu có
+      // Prioritize getting boardId from list embed if available
       String? boardId = _card?.list?.boardId;
       String? listId = _card?.list?.id ?? _card?.listId;
 
-      // Fallback: nếu không có list embed, dùng listId để gọi API lấy boardId
+      // Fallback: if no list embed, use listId to call API to get boardId
       if ((boardId == null || boardId.isEmpty) && (listId != null && listId.isNotEmpty)) {
         final listDetail = await _cardController.getListDetail(listId);
         if ((listDetail['status'] == 'success' || listDetail['success'] == true) &&
@@ -508,7 +508,7 @@ class _CardDetailViewState extends State<CardDetailView> {
         if (Get.isRegistered<BoardController>(tag: boardControllerTag)) {
           final boardController = Get.find<BoardController>(tag: boardControllerTag);
 
-          // Cập nhật card trong bộ nhớ tạm nếu có dữ liệu hiện tại
+          // Update card in temporary memory if current data exists
           if (_card != null && (listId != null && listId.isNotEmpty)) {
             final cards = boardController.cardsByList[listId];
             if (cards != null) {
@@ -520,7 +520,7 @@ class _CardDetailViewState extends State<CardDetailView> {
             }
           }
 
-          // Force refresh để đồng bộ dữ liệu từ server
+          // Force refresh to sync data from server
           await boardController.forceRefresh();
         }
       }
